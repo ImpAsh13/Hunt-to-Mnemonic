@@ -1,5 +1,7 @@
 #### Огромное спасибо iceland2k14 за его работу
 
+#### Изменения от 12.02.22!
+    Добавлена поддержка поиска ELECTRUM OLD SEED
 #### Изменения от 30.01.22!
     Добавлен в режим ETH поддержка генерации адресов BIP32
     В режим -rnd добавлена поддержка случайного поиска ETH
@@ -175,6 +177,14 @@ https://drive.google.com/drive/folders/1E2rC7GSc59lAIJi_gD0O-tgGiXwcS7Wl (гот
 ![WORK](https://github.com/Noname400/Hunt-to-Mnemonic/blob/main/image/primer1.jpg)
 ![WORK](https://github.com/Noname400/Hunt-to-Mnemonic/blob/main/image/primer2.jpg)
 ![WORK](https://github.com/Noname400/Hunt-to-Mnemonic/blob/main/image/primer3.jpg)
+
+### Вы должны помнить!!!
+![LONG](https://github.com/Noname400/Hunt-to-Mnemonic/blob/main/image/longlonglongtime.jpg)
+
+### Отказ от ответственности.
+Программное обеспечение предоставлено только в целях ознакомления. За все последствия использования ПО пользователи несут личную ответственность.
+Автор не несет ответственности для использования его продуктов в каких-либо корыстных целях.
+
 
 #### Благодарность за мою работу:  
 Bitcoin: 1NoName1LLKRfLmoh9jawLWrf6t185bC7v  

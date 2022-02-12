@@ -6,7 +6,9 @@
 """
 
 import argparse
+import unicodedata
 import ctypes
+import hmac
 import datetime
 from time import sleep, time
 import logging
@@ -14,16 +16,17 @@ import multiprocessing
 import os
 import platform
 import secrets
+import random
 import smtplib
 import socket
 import string
 import sys
-from binascii import hexlify
-import ecdsa,hashlib, binascii, base58
-from ecdsa.ecdsa import digest_integer
+import ecdsa
+import hashlib
+import pbkdf2
 from logging import Formatter
 from multiprocessing import Lock, Process, Value
-from random import randint
+from random import randint, shuffle
 from secrets import choice
 import bitcoin
 import requests
@@ -96,6 +99,19 @@ class email:
     desc:str = ''
 
 class inf:
+    def load_elec():
+        try:
+            f = open('wl/electrum.txt','r')
+            l = [line.strip() for line in f]
+            f.close()
+        except:
+            logger_err.error('Error load wl/electrum.txt')
+            print(f'[E] Error load wl/electrum.txt')
+            pp = multiprocessing.current_process()
+            pp.close()
+            sys.exit()
+        else:
+            return l
     def load_game():
         try:
             f = open('wl/game.txt','r')
@@ -122,7 +138,7 @@ class inf:
             sys.exit()
         else:
             return l
-    version:str = '* Pulsar v5.2.6 multiT Hash160 *'
+    version:str = '* Pulsar v5.4.0 multiT Hash160 *'
     mnemonic_BTC:list = ['english', 'japanese', 'chinese_simplified', 'chinese_traditional'] # ['english', 'chinese_simplified', 'chinese_traditional', 'french', 'italian', 'spanish', 'korean','japanese','portuguese','czech']
     mnemonic_ETH:list = ['english'] # ['english', 'chinese_simplified', 'chinese_traditional', 'french', 'italian', 'spanish', 'korean','japanese','portuguese','czech']
     #general
@@ -133,13 +149,15 @@ class inf:
     db_btc:str = ''
     db_eth:str = ''
     lbtc:list = ['44','49','84']
-    l32:list = ["m/0'/","m/44'/0'/"]
-    l32_:list = ["","'"]#"","'"
+    l32:list = ["m/0'/", "m/44'/0'/", "m/0/"]
+    l32_:list = [""]#"","'"
     l44:list = ['0','145','236'] # ["0","145","236","156","177","222","192","2","3","5","7","8","20","22","28","90","133","147","2301","175","216"]
     leth:list = ['60','61'] #['60','61']
     bip:str = 'BTC'
     game_list:list = []
     rnd = False
+    elec = False
+    elec_list = []
     custom_list:list = []
     custom_dir:str = ''
     custom_words:int = 12
