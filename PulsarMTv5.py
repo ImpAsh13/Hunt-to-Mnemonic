@@ -10,7 +10,7 @@ from consts import *
 
 def createParser ():
     parser = argparse.ArgumentParser(description='Hunt to Mnemonic')
-    parser.add_argument ('-b', '--bip', action='store', type=str, help='32/44/ETH/BTC/combo default Mode BTC', default='BTC')
+    parser.add_argument ('-b', '--bip', action='store', type=str, help='32/44/ETH/BTC/combo/elec default Mode BTC', default='BTC')
     parser.add_argument ('-dbbtc', '--databasebtc', action='store', type=str, help='File BF BTC', default='')
     parser.add_argument ('-dbeth', '--databaseeth', action='store', type=str, help='File BF ETH', default='')
     parser.add_argument ('-th', '--threading', action='store', type=int, help='threading', default='1')
@@ -24,12 +24,13 @@ def createParser ():
     parser.add_argument ('-brain', '--brain', action='store_true', help='check brain')
     parser.add_argument ('-telegram', '--telegram', action='store_true', help='send telegram')
     parser.add_argument ('-rnd', '--rnd', action='store_true', help='enable rnd')
+    parser.add_argument ('-elec', '--elec', action='store_true', help='enable elec')
     parser.add_argument ('-cd', '--customdir', action='store', type=str, help='custom dir for mode custom', default='')
     parser.add_argument ('-cw', '--customword', action='store', type=int, help='custom words for mode custom', default='6')
     parser.add_argument ('-cl', '--customlang', action='store', type=str, help='custom lang for mode custom', default='english')
     return parser.parse_args().bip, parser.parse_args().databasebtc, parser.parse_args().databaseeth, parser.parse_args().threading, parser.parse_args().mode, \
         parser.parse_args().desc, parser.parse_args().bit, parser.parse_args().debug, parser.parse_args().mail, parser.parse_args().sleep, parser.parse_args().balance, \
-        parser.parse_args().brain, parser.parse_args().telegram, parser.parse_args().rnd, parser.parse_args().customdir, parser.parse_args().customword, parser.parse_args().customlang
+        parser.parse_args().brain, parser.parse_args().telegram, parser.parse_args().rnd, parser.parse_args().elec, parser.parse_args().customdir, parser.parse_args().customword, parser.parse_args().customlang
 
 def run(*args):
     inf.bip = args[0]
@@ -46,14 +47,17 @@ def run(*args):
     inf.brain = args[11]
     inf.telegram = args[12]
     inf.rnd = args[13]
-    inf.custom_dir = args[14]
-    inf.custom_words = args[15]
-    inf.custom_lang = args[16]
-    total_counter = args[17]
-    process_counter = args[18]
-    brain_counter = args[19]
-    found_counter = args[20]
-    mnem_counter = args[21]
+    inf.elec = args[14]
+    inf.custom_dir = args[15]
+    inf.custom_words = args[16]
+    inf.custom_lang = args[17]
+    total_counter = args[18]
+    process_counter = args[19]
+    brain_counter = args[20]
+    found_counter = args[21]
+    mnem_counter = args[22]
+    elec_counter = args[23]
+    rnd_counter = args[24]
     tc = 0
     ind:int = 1
     if inf.bip == 'BTC' or inf.bip == '32' or inf.bip == '44': 
@@ -69,8 +73,11 @@ def run(*args):
         mnemonic_lang = inf.mnemonic_ETH
         inf.bf_eth = load_BF(inf.db_eth)
         process_counter.increment(1)
+        
+    if inf.elec: inf.elec_list = inf.load_elec()
     if inf.mode == 'g': inf.game_list = inf.load_game()
     if inf.mode == 'c': inf.custom_list = inf.load_custom(inf.custom_dir)
+
     try:
         while True:
             pp = multiprocessing.current_process()
@@ -85,17 +92,18 @@ def run(*args):
                 else: mnemonic, seed_bytes = nnmnem(mem)
                 #rnd
                 if inf.rnd and inf.bip == 'combo':
-                    total_counter.increment(brnd('btc',found_counter))
-                    total_counter.increment(brnd('eth',found_counter))
+                    rnd_counter.increment(brnd('btc',found_counter))
+                    rnd_counter.increment(brnd('eth',found_counter))
                 elif inf.rnd and (inf.bip == 'BTC' or inf.bip == '32' or inf.bip == '44'):
-                    total_counter.increment(brnd('btc',found_counter))
+                    rnd_counter.increment(brnd('btc',found_counter))
                 elif inf.rnd and inf.bip == 'ETH':
-                    total_counter.increment(brnd('eth',found_counter))
+                    rnd_counter.increment(brnd('eth',found_counter))
                 #brain
                 if inf.brain and inf.bip !='ETH':
                     brain_counter.increment(bw(mnemonic, False, found_counter))
-                    brain_counter.increment(bw(seed_bytes.hex(), True, found_counter))
-                    if inf.mode == 'e' : brain_counter.increment(bw(rnd, True, found_counter))
+                #electrum
+                if inf.elec and inf.bip !='ETH':
+                    elec_counter.increment(belec(found_counter))
                 #function bip
                 if inf.bip == "32" : total_counter.increment(b32(mnemonic,seed_bytes, found_counter))
                 if inf.bip == "44" : total_counter.increment(b44(mnemonic,seed_bytes, found_counter))
@@ -107,31 +115,39 @@ def run(*args):
                     total_counter.increment(b32(mnemonic,seed_bytes, found_counter))
                     total_counter.increment(bBTC(mnemonic,seed_bytes, found_counter))
                     total_counter.increment(bETH(mnemonic,seed_bytes, found_counter))
-                    
+            
+            pc = process_counter.value()
+            mc = mnem_counter.value()
+            fc = found_counter.value()
+            rn = rnd_counter.value()
+            rn_float, rn_hash = convert_int(rn)
+            bc:int = brain_counter.value()
+            bc_float, bc_hash = convert_int(bc)
+            el = elec_counter.value()
+            el_float, el_hash = convert_int(el)
+            
             st = time() - start_time
             ftc = tc
             tc = total_counter.value()
+            tc = tc + rn + bc + el
             tc_float, tc_hash = convert_int(tc)
             btc = tc - ftc
+            
             speed = int((btc/st))
             speed_float, speed_hash = convert_int(speed)
-            mc = mnem_counter.value()
-            fc = found_counter.value()
-            bc:int = brain_counter.value()
-            bc_float, bc_hash = convert_int(bc)
-            pc = process_counter.value()
+
             if multiprocessing.current_process().name == '0':
-                print(f'{yellow}> Cores:{pc} | Mnemonic: {mc} | Hash MNEM: {tc_float} {tc_hash} | Hash BRAIN: {bc_float} {bc_hash} | {speed_float} {speed_hash} | Found: {fc}',end='\r')
+                print(f'{yellow}> Cores:{pc} | Mnemonic:{mc} | MNEM/h:{tc_float} {tc_hash} | BRAIN/h:{bc_float} {bc_hash} | RND/h:{rn_float} {rn_hash} | Electrum/h:{el_float} {el_hash} | Total/h:{speed_float} {speed_hash} | Found:{fc}',end='\r')
             inf.count = 0
             ind += 1
     except(KeyboardInterrupt, SystemExit):
         print('\n[EXIT] Interrupted by the user.')
         logger_info.info('[EXIT] Interrupted by the user.')
-        sys.exit()
+        exit()
 
 if __name__ == "__main__":
     inf.bip, inf.db_btc, inf.db_eth, inf.th, inf.mode, email.desc, inf.bit, inf.debug, inf.mail, inf.delay, inf.balance, \
-        inf.brain, inf.telegram, inf.rnd, inf.custom_dir, inf.custom_words, inf.custom_lang  = createParser()
+        inf.brain, inf.telegram, inf.rnd, inf.elec, inf.custom_dir, inf.custom_words, inf.custom_lang  = createParser()
     print('-'*70,end='\n')
     print(f'{green}Thank you very much: @iceland2k14 for his libraries!')
 
@@ -141,21 +157,26 @@ if __name__ == "__main__":
     else:
         print(f'{red}[E] TEST: ERROR')
         logger_err.error(('[E] TEST: ERROR'))
-        sys.exit()
+        exit()
 
     if inf.bip in ('32', '44', 'ETH', 'BTC', 'combo'):
         pass
     else:
         print(f'{red}[E] Wrong BIP selected')
         logger_err.error(('[E] Wrong BIP selected'))
-        sys.exit()
+        exit()
+
+    if inf.bip == 'ETH' and inf.elec:
+        print(f'{red}[E] incompatible operating modes.')
+        logger_err.error(('[E] incompatible operating modes.'))
+        exit()
 
     if inf.bit in (128, 160, 192, 224, 256):
         pass          
     else:
         print(f'{red}[E] Wrong words selected')
         logger_err.error(('[E] Wrong words selected'))
-        sys.exit()
+        exit()
 
     if inf.mode in ('s', 'e', 'g', 'c'):
         if (inf.mode == 's'):
@@ -168,17 +189,17 @@ if __name__ == "__main__":
             if inf.custom_dir == '':
                 print(f'{red}[E] NOT custom file')
                 logger_err.error(('[E] NOT custom file'))
-                sys.exit()
+                exit()
             inf.mode_text = 'Custom words'
     else:
         print(f'{red}[E] Wrong mode selected')
         logger_err.error(('[E] Wrong mode selected'))
-        sys.exit()
+        exit()
 
     if inf.th < 1:
         print(f'{red}[E] The number of processes must be greater than 0')
         logger_err.error(('[E] The number of processes must be greater than 0'))
-        sys.exit()
+        exit()
 
     if inf.th > multiprocessing.cpu_count():
         print(f'{red}[I] The specified number of processes exceeds the allowed')
@@ -228,16 +249,19 @@ if __name__ == "__main__":
     brain_counter = Counter(0)
     found_counter = Counter(0)
     mnem_counter = Counter(0)
+    elec_counter = Counter(0)
+    rnd_counter = Counter(0)
 
     procs = []
     try:
         for r in range(inf.th): 
-            p = Process(target=run, name= str(r), args=(inf.bip, inf.db_btc, inf.db_eth, inf.mode, email.desc, inf.bit, inf.debug, inf.mail, inf.th, 
-                inf.delay, inf.balance, inf.brain, inf.telegram, inf.rnd, inf.custom_dir, inf.custom_words, inf.custom_lang, total_counter, process_counter, brain_counter, found_counter, mnem_counter,))
+            p = Process(target=run, name= str(r), args=(inf.bip, inf.db_btc, inf.db_eth, inf.mode, email.desc, inf.bit, inf.debug, inf.mail, inf.th, \
+                inf.delay, inf.balance, inf.brain, inf.telegram, inf.rnd, inf.elec, inf.custom_dir, inf.custom_words, inf.custom_lang, total_counter, \
+                process_counter, brain_counter, found_counter, mnem_counter, elec_counter, rnd_counter,))
             procs.append(p)
             p.start()
         for proc in procs: proc.join()
     except(KeyboardInterrupt, SystemExit):
         print('\n[EXIT] Interrupted by the user.')
         logger_info.info('[EXIT] Interrupted by the user.')
-        sys.exit()
+        exit()

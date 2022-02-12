@@ -6,23 +6,64 @@
 
 from consts import *
 
-def generate_private_key():
-    curve = ecdsa.curves.SECP256k1
-    se = random_secret_exponent(curve.order)
-    from_secret_exponent = ecdsa.keys.SigningKey.from_secret_exponent
-    return int(from_secret_exponent(se, curve, hashlib.sha256).to_string().hex(),16)
+def normalize_text(seed):
+    # normalize
+    seed = unicodedata.normalize('NFKD', seed)
+    # lower
+    seed = seed.lower()
+    # remove accents
+    seed = u''.join([c for c in seed if not unicodedata.combining(c)])
+    # normalize whitespaces
+    seed = u' '.join(seed.split())
+    # remove whitespaces between CJK
+    seed = u''.join([seed[i] for i in range(len(seed)) if not (seed[i] in string.whitespace)])
+    return seed
 
-def random_secret_exponent(curve_order):
-    while True:
-        bytes = secrets.token_bytes(32)
-        random_hex = hexlify(bytes)
-        random_int = int(random_hex, 16)
-        if random_int >= 1 and random_int < curve_order:
-            return random_int
-        
-        else:
-            curve = ecdsa.curves.SECP256k1 
-            random_secret_exponent(curve.order)
+def mnemonic_to_seed32(mnemonic, passphrase=''):
+    PBKDF2_ROUNDS = 2048
+    mnemonic = normalize_text(mnemonic)
+    passphrase = normalize_text(passphrase)
+    return pbkdf2.PBKDF2(mnemonic, 'electrum' + passphrase, iterations = PBKDF2_ROUNDS, macmodule = hmac, digestmodule = hashlib.sha512).read(16)
+
+def gen_seed(text):
+    tmp = []
+    if text == '': return bitcoin.random_electrum_seed()
+    else:
+        tmp.append(mnemonic_to_seed32(mnemonic=text))
+        tmp.append(bitcoin.sha256(text)[32:])
+        tmp.append(bitcoin.dbl_sha256(text)[32:])
+        return tmp
+
+def mn_encode( message ):
+    n = 1626
+    assert len(message) % 8 == 0
+    out = []
+    for i in range(len(message)//8):
+        word = message[8*i:8*i+8]
+        x = int(word, 16)
+        w1 = (x%n)
+        w2 = ((x//n) + w1)%n
+        w3 = ((x//n//n) + w2)%n
+        out += [ inf.elec_list[w1], inf.elec_list[w2], inf.elec_list[w3] ]
+    return out
+
+def mn_decode( wlist ):
+    n = 1626
+    out = ''
+    for i in range(len(wlist)//3):
+        word1, word2, word3 = wlist[3*i:3*i+3]
+        w1 =  inf.elec_list.index(word1)
+        w2 = (inf.elec_list.index(word2))%n
+        w3 = (inf.elec_list.index(word3))%n
+        x = w1 +n*((w2-w1)%n) +n*n*((w3-w2)%n)
+        out += '%08x'%x
+    return out
+
+def generate_private_key():
+    ecdsaPrivateKey = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1)
+    ec = ecdsaPrivateKey.to_string().hex()
+    ec_i = int(ec,16)
+    return ec_i
 
 def send_telegram(text: str):
     try:
@@ -58,63 +99,71 @@ def bw(text, backspace, fc):
     f1 = []
     f2 = []
     co = 0
-    co_count = 0
-    if backspace: no_bs = text.replace(' ', '')
-    text_rev = reverse_string(text)
-    f1.append(bitcoin.sha256(text))
-    if backspace: f1.append(bitcoin.sha256(no_bs))
-    f1.append(bitcoin.sha256(text_rev))
-    f1.append(bitcoin.dbl_sha256(text))
-    if backspace: f1.append(bitcoin.dbl_sha256(no_bs))
-    f1.append(bitcoin.dbl_sha256(text_rev))
+    list_text = text.split()
+    for i in range(24):
+        res_text = ' '.join([str(item) for item in list_text]) 
+        if backspace: no_bs = res_text.replace(' ', '')
+        text_rev = reverse_string(res_text)
+        f1.append(bitcoin.sha256(res_text))
+        if backspace: f1.append(bitcoin.sha256(no_bs))
+        f1.append(bitcoin.sha256(text_rev))
+        f1.append(bitcoin.dbl_sha256(res_text))
+        if backspace: f1.append(bitcoin.dbl_sha256(no_bs))
+        f1.append(bitcoin.dbl_sha256(text_rev))
+        random.shuffle(list_text)
     for res in f1:
+        f2.append(secp256k1_lib.privatekey_to_h160(1, True, int(res,16)))
         f2.append(secp256k1_lib.privatekey_to_h160(0, True, int(res,16)))
-        f2.append(secp256k1_lib.privatekey_to_h160(0, False, int(res,16)))
+        f2.append( secp256k1_lib.privatekey_to_h160(0, False, int(res,16)))
     for res in f2:
         if inf.debug > 0:
             addr_c = secp256k1_lib.hash_to_address(0, False, res)
+            addr_uc = secp256k1_lib.hash_to_address(0, False, res)
+            addr_cs = secp256k1_lib.hash_to_address(1, False, res)
             addr_cbc = secp256k1_lib.hash_to_address(2, False, res)
-            print(f'[D][BRAIN] PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_cbc} | {text}')
-            logger_dbg.debug(f'[D][BRAIN] PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_cbc} | {text}')
+            
+            print(f'[D][BRAIN] PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+            logger_dbg.debug(f'[D][BRAIN] PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
         if res in inf.bf_btc:
             addr_c = secp256k1_lib.hash_to_address(0, False, res)
             addr_cbc = secp256k1_lib.hash_to_address(2, False, res)
             if inf.debug > 0:
-                print(f'[D][F][BRAIN] PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_cbc} | {text}')
-                logger_dbg.debug(f'[D][F][BRAIN] PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_cbc} | {text}')
+                print(f'[D][F][BRAIN] PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                logger_dbg.debug(f'[D][F][BRAIN] PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
             if inf.debug < 1:
                 if inf.balance:
                     tx1, b1 = get_balance(addr_c,'BTC')
+                    tx2, b2 = get_balance(addr_uc,'BTC')
+                    tx3, b3 = get_balance(addr_cs,'BTC')
                     tx4, b4 = get_balance(addr_cbc,'BTC')
                     if (tx1 > 0) or (tx4 > 0):
-                        print(f'\n[F][BRAIN] Found transaction! PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c}:{b1} | {addr_cbc}:{b4} | {text}')
-                        logger_found.info(f'[F][BRAIN] Found transaction! PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c}:{b1} | {addr_cbc}:{b4} | {text}')
+                        print(f'\n[F][BRAIN] Found transaction! PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c}:{b1} | {addr_uc}:{b2} | {addr_cs}:{b3} | {addr_cbc}:{b4} | {text}')
+                        logger_found.info(f'[F][BRAIN] Found transaction! PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c}:{b1} | {addr_uc}:{b2} | {addr_cs}:{b3} | {addr_cbc}:{b4} | {text}')
                     if (b1 > 0) or (b4 > 0):
-                        print(f'\n[F][BRAIN] Found address in balance! PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_cbc} | {text}')
-                        logger_found.info(f'[F][BRAIN] Found address in balance! PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_cbc} | {text}')
+                        print(f'\n[F][BRAIN] Found address in balance! PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                        logger_found.info(f'[F][BRAIN] Found address in balance! PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                         if inf.mail:
-                            send_email(f'[F][BRAIN PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_cbc} | {text}')
+                            send_email(f'[F][BRAIN PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                         if inf.telegram:
-                            send_telegram(f'[F][BRAIN PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_cbc} | {text}')  
+                            send_telegram(f'[F][BRAIN PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')  
                         fc.increment(1)
                     else:
-                        print(f'\n[F][BRAIN] Found address balance 0.0 PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_cbc} | {text}')
-                        logger_found.info(f'[F][BRAIN] Found address balance 0.0 PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_cbc} | {text}')
+                        print(f'\n[F][BRAIN] Found address balance 0.0 PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                        logger_found.info(f'[F][BRAIN] Found address balance 0.0 PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                         if inf.mail:
-                            send_email(f'[F][BRAIN] Found address balance 0.0 PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_cbc} | {text}')
+                            send_email(f'[F][BRAIN] Found address balance 0.0 PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                         if inf.telegram:
-                            send_telegram(f'[F][BRAIN] Found address balance 0.0 PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_cbc} | {text}')
+                            send_telegram(f'[F][BRAIN] Found address balance 0.0 PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                 else:
-                    print(f'\n[F][BRAIN] Found address PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_cbc} | {text}')
-                    logger_found.info(f'[F][BRAIN] Found address PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_cbc} | {text}')
+                    print(f'\n[F][BRAIN] Found address PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                    logger_found.info(f'[F][BRAIN] Found address PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                     if inf.mail:
-                        send_email(f'[F][BRAIN] Found address PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_cbc} | {text}')
+                        send_email(f'[F][BRAIN] Found address PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                     if inf.telegram:
-                        send_telegram(f'[F][BRAIN] Found address PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_cbc} | {text}')
+                        send_telegram(f'[F][BRAIN] Found address PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                     fc.increment(1)
-        co += 1
-        co_count += 2
-    return co_count
+        co += 4
+    return co
 
 def get_balance(address,cyr):
     sleep(11) 
@@ -165,7 +214,7 @@ def load_BF(load):
     else:
         n_int = int(multiprocessing.current_process().name)
         sleep(inf.delay*n_int)
-        return BloomFilter.load(fp)    
+        return BloomFilter.load(fp)
 
 def send_email(text):
     subject = ''
@@ -268,8 +317,9 @@ def brnd(bip, fc):
                         if inf.mail:
                             send_email(f'[F][Mode RND BTC] Found address (PG:{tmp}) | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                         fc.increment(1)
-            co += 3
+            co += 4
         return co
+
     def reth(group_size,Pv):
         co = 0
         for t in range(group_size):
@@ -310,7 +360,7 @@ def brnd(bip, fc):
             co += 1
         return co
 
-    group_size = 15000
+    group_size = 10000
     pvk_int = generate_private_key()
     P = secp256k1_lib.scalar_multiplication(pvk_int)
     current_pvk = pvk_int + 1
@@ -321,7 +371,6 @@ def brnd(bip, fc):
     else:
         res = reth(group_size,Pv)
         return res
-
 
 def b32(mnem, seed, fc):
     co = 0
@@ -418,8 +467,9 @@ def bETH(mnem, seed, fc):
                         pvk_int = int(pvk.hex(),16)
                         pvk_int = pvk_int - 1
                         P = secp256k1_lib.scalar_multiplication(pvk_int)
-                        Pv = secp256k1_lib.point_sequential_increment(group_size, P)
                         current_pvk = pvk_int + 1
+                        Pv = secp256k1_lib.point_sequential_increment(group_size, P)
+                        
                         for t in range(group_size):
                             addr = secp256k1_lib.pubkey_to_ETH_address(Pv[t*65:t*65+65])
                             if inf.debug > 0:
@@ -570,50 +620,147 @@ def bBTC(mnem, seed, fc):
                         co += 3
     return co
 
+def belec(fc):
+    co = 0
+    seed = gen_seed('')
+    mnemo = mn_encode(seed)
+    mpub = bitcoin.electrum_mpk(seed)
+    for i in range(2):
+        for ii in range(20):
+            pub = bitcoin.from_string_to_bytes(bitcoin.electrum_pubkey(mpub, ii, i))
+            gl = bitcoin.from_string_to_bytes('04'+ mpub)
+            res = secp256k1_lib.pubkey_to_h160(0,False,pub).hex()
+            res2 = secp256k1_lib.pubkey_to_h160(0,False,gl).hex()
+            if (res in inf.bf_btc) or (res2 in inf.bf_btc):
+                fc.increment(1)
+                #print(f'{mnemo} | {seed} | {res}')
+                logger_info.info('found.txt',f'{mnemo} | {seed} | {res}')
+                if inf.balance:
+                    tx1, b1 = get_balance(res)
+                    if (tx1 > 0):
+                        print(f'\n[W] Found transaction! | {res}:{b1}')
+                    print(f'\n[W] Found address | {res}:{b1}')
+                    if (b1 > 0):
+                        print(f'\n[W] Found address in balance | mnem:{mnemo} | {seed} | {res}')
+                        logger_info.info('found.txt',f'{mnemo} | {seed} | {res}')
+                    else:
+                        if (b1 < 0): 
+                            print(f'\n[W] Found address | {mnemo} | {seed} | {res}')
+                            logger_info.info(f'log.txt',f'{mnemo} | {seed} | {res}')
+                        print('[W] Found address balance 0.0')
+                else:
+                    print(f'\n[W] Found address | {mnemo} | {seed} | {res}')
+                    logger_info.info(f'found.txt',f'{mnemo} | {seed} | {res}')
+            co +=2
+    return co
+
+
 def nnmnem(mem):
-    if inf.mode == 'e':
-        mnemo:Mnemonic = Mnemonic(mem)
-        if inf.bit == 128: bit = 16
-        if inf.bit == 160: bit = 20
-        if inf.bit == 192: bit = 24
-        if inf.bit == 224: bit = 28
-        if inf.bit == 256: bit = 32
-        ran = secrets.token_hex(bit)
-        mnemonic = mnemo.to_mnemonic(bytes.fromhex(ran))
-        seed_bytes = mnemo.to_seed(mnemonic, passphrase='')
-    elif inf.mode =='g':
-        mnemonic = ''
-        mnemo:Mnemonic = Mnemonic(mem)
-        rw = randint(1,25)
-        mnemonic = ' '.join(choice(inf.game_list) for i in range(rw))
-        seed_bytes:bytes = mnemo.to_seed(mnemonic, passphrase='')
-    elif inf.mode =='c':
-        mnemonic = ''
-        mnemo:Mnemonic = Mnemonic(mem)
-        rw = inf.custom_words
-        mnemonic = ' '.join(choice(inf.custom_list) for i in range(rw))
-        seed_bytes:bytes = mnemo.to_seed(mnemonic, passphrase='')
+    def normalize_text(seed):
+        # normalize
+        seed = unicodedata.normalize('NFKD', seed)
+        # lower
+        seed = seed.lower()
+        # remove accents
+        seed = u''.join([c for c in seed if not unicodedata.combining(c)])
+        # normalize whitespaces
+        seed = u' '.join(seed.split())
+        # remove whitespaces between CJK
+        seed = u''.join([seed[i] for i in range(len(seed)) if not (seed[i] in string.whitespace)])
+        return seed
+
+    def mnemonic_to_seed32(mnemonic, passphrase=''):
+        PBKDF2_ROUNDS = 2048
+        mnemonic = normalize_text(mnemonic)
+        passphrase = normalize_text(passphrase)
+        return pbkdf2.PBKDF2(mnemonic, 'electrum' + passphrase, iterations = PBKDF2_ROUNDS, macmodule = hmac, digestmodule = hashlib.sha512).read(16)
+
+    def gen_seed(text):
+        if text == '': return bitcoin.random_electrum_seed()
+        else:
+            return mnemonic_to_seed32(mnemonic=text), bitcoin.sha256('text')[32:], bitcoin.dbl_sha256('text')[32:]
+
+    def mn_encode( message ):
+        n = 1626
+        assert len(message) % 8 == 0
+        out = []
+        for i in range(len(message)//8):
+            word = message[8*i:8*i+8]
+            x = int(word, 16)
+            w1 = (x%n)
+            w2 = ((x//n) + w1)%n
+            w3 = ((x//n//n) + w2)%n
+            out += [ inf.elec_list[w1], inf.elec_list[w2], inf.elec_list[w3] ]
+        return out
+
+    def mn_decode( wlist ):
+        out = ''
+        n = 1626
+        for i in range(len(wlist)//3):
+            word1, word2, word3 = wlist[3*i:3*i+3]
+            w1 =  inf.elec_list.index(word1)
+            w2 = (inf.elec_list.index(word2))%n
+            w3 = (inf.elec_list.index(word3))%n
+            x = w1 +n*((w2-w1)%n) +n*n*((w3-w2)%n)
+            out += '%08x'%x
+        return out
+    
+    if inf.bip == 'elec':
+        if inf.mode == 's':
+            mnemonic = ' '.join(secrets.choice(inf.elec_list) for i in range(12))
+            w1 = mnemonic.split()
+            seed = mn_decode(w1)
+            return mnemonic, seed
+        else:
+            seed = gen_seed('')
+            mnemonic = mn_encode(seed)
+            return mnemonic, seed
     else:
-        mnemo:Mnemonic = Mnemonic(mem)
-        mnemonic:str = mnemo.generate(strength=inf.bit)
-        seed_bytes:bytes = mnemo.to_seed(mnemonic, passphrase='')
- 
-    if inf.debug==1:
-        mnemo = Mnemonic('english')
-        mnemonic = 'world evolve cry outer garden common differ jump few diet cliff lumber'
-        seed_bytes:bytes = mnemo.to_seed(mnemonic, passphrase='')
-        print(f'Debug Mnemonic : {mnemonic}')
-        print(f'Debug SEED : {seed_bytes.hex()}')
-        logger_dbg.debug(f'[D] Debug Mnemonic : {mnemonic}')
-        logger_dbg.debug(f'[D] Debug SEED : {seed_bytes.hex()}')
-    if inf.debug==2:
-        print('Debug Mnemonic : '+ mnemonic)
-        print(f'Debug SEED : {seed_bytes.hex()}')
-        logger_dbg.debug(f'[D] Debug Mnemonic : {mnemonic}')
-        logger_dbg.debug(f'[D] Debug SEED : {seed_bytes.hex()}')
-        
-    if inf.mode == 'e' : return mnemonic, seed_bytes , ran
-    else: return mnemonic, seed_bytes
+        if inf.mode == 'e':
+            mnemo:Mnemonic = Mnemonic(mem)
+            if inf.bit == 128: bit = 16
+            if inf.bit == 160: bit = 20
+            if inf.bit == 192: bit = 24
+            if inf.bit == 224: bit = 28
+            if inf.bit == 256: bit = 32
+            ran = secrets.token_hex(bit)
+            mnemonic = mnemo.to_mnemonic(bytes.fromhex(ran))
+            seed_bytes = mnemo.to_seed(mnemonic, passphrase='')
+        elif inf.mode =='g':
+            mnemonic = ''
+            mnemo:Mnemonic = Mnemonic(mem)
+            rw = randint(1,25)
+            mnemonic = ' '.join(choice(inf.game_list) for i in range(rw))
+            seed_bytes:bytes = mnemo.to_seed(mnemonic, passphrase='')
+        elif inf.mode =='c':
+            mnemonic = ''
+            mnemo:Mnemonic = Mnemonic(mem)
+            rw = inf.custom_words
+            mnemonic = ' '.join(choice(inf.custom_list) for i in range(rw))
+            seed_bytes:bytes = mnemo.to_seed(mnemonic, passphrase='')
+        else:
+            mnemo:Mnemonic = Mnemonic(mem)
+            mnemonic:str = mnemo.generate(strength=inf.bit)
+            seed_bytes:bytes = mnemo.to_seed(mnemonic, passphrase='')
+    
+        if inf.debug==1:
+            mnemo = Mnemonic('english')
+            mnemonic = 'world evolve cry outer garden common differ jump few diet cliff lumber'
+            seed_bytes:bytes = mnemo.to_seed(mnemonic, passphrase='')
+            print(f'Debug Mnemonic : {mnemonic}')
+            print(f'Debug SEED : {seed_bytes.hex()}')
+            logger_dbg.debug(f'[D] Debug Mnemonic : {mnemonic}')
+            logger_dbg.debug(f'[D] Debug SEED : {seed_bytes.hex()}')
+        if inf.debug==2:
+            if inf.mode == 'e':
+                print(f'Entropy : {ran}')
+            print(f'Debug Mnemonic : {mnemonic}')
+            print(f'Debug SEED : {seed_bytes.hex()}')
+            logger_dbg.debug(f'[D] Debug Mnemonic : {mnemonic}')
+            logger_dbg.debug(f'[D] Debug SEED : {seed_bytes.hex()}')
+            
+        if inf.mode == 'e' : return mnemonic, seed_bytes , ran
+        else: return mnemonic, seed_bytes
 
 def test():
     if inf.telegram:
