@@ -27,7 +27,7 @@ def mnemonic_to_seed32(mnemonic, passphrase=''):
 
 def gen_seed(text):
     tmp = []
-    if text == '': return bitcoin.random_electrum_seed()
+    if text == '': return secrets.token_hex(16)
     else:
         tmp.append(mnemonic_to_seed32(mnemonic=text))
         tmp.append(bitcoin.sha256(text)[32:])
