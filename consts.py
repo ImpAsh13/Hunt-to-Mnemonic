@@ -5,38 +5,24 @@
 @author: Noname400
 """
 
-import argparse
-import unicodedata
-import ctypes
-import hmac
-import datetime
-from time import sleep, time
-import logging
-import multiprocessing
-import os
-import platform
-import secrets
-import random
-import smtplib
-import socket
-import string
-import sys
-import ecdsa
-import hashlib
-import pbkdf2
-from logging import Formatter
-from multiprocessing import Lock, Process, Value
-from random import randint, shuffle
-from secrets import choice
-import bitcoin
-import requests
 from bip32 import BIP32
 from bloomfilter import BloomFilter
 from colorama import Back, Fore, Style, init
 from mnemonic import Mnemonic
-
+from multiprocessing import Lock, Process, Value
+from time import sleep, time
+import logging
+from logging import Formatter
+import argparse, unicodedata, ctypes, hmac, datetime
+import multiprocessing
+import os, sys, platform
+import random, secrets
+import smtplib, socket, string, sys, ecdsa, hashlib, pbkdf2
+from random import randint, shuffle
+from secrets import choice
+import bitcoin
+import requests
 import secp256k1_lib
-
 init(autoreset = True)
 
 yellow = Fore.YELLOW+Style.BRIGHT
@@ -109,7 +95,7 @@ class inf:
             print(f'[E] Error load wl/electrum.txt')
             pp = multiprocessing.current_process()
             pp.close()
-            sys.exit()
+            exit()
         else:
             return l
     def load_game():
@@ -122,7 +108,7 @@ class inf:
             print(f'[E] Error load wl/game.txt')
             pp = multiprocessing.current_process()
             pp.close()
-            sys.exit()
+            exit()
         else:
             return l
     def load_custom(custom_file):
@@ -135,10 +121,10 @@ class inf:
             print(f'[E] Error load {custom_file}')
             pp = multiprocessing.current_process()
             pp.close()
-            sys.exit()
+            exit()
         else:
             return l
-    version:str = '* Pulsar v5.4.1 multiT Hash160 *'
+    version:str = '* Pulsar v5.4.3 multiT Hash160 *'
     mnemonic_BTC:list = ['english', 'japanese', 'chinese_simplified', 'chinese_traditional'] # ['english', 'chinese_simplified', 'chinese_traditional', 'french', 'italian', 'spanish', 'korean','japanese','portuguese','czech']
     mnemonic_ETH:list = ['english'] # ['english', 'chinese_simplified', 'chinese_traditional', 'french', 'italian', 'spanish', 'korean','japanese','portuguese','czech']
     #general
