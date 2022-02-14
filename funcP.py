@@ -122,14 +122,14 @@ def bw(text, backspace, fc):
             addr_cs = secp256k1_lib.hash_to_address(1, False, res)
             addr_cbc = secp256k1_lib.hash_to_address(2, False, res)
             
-            print(f'[D][BRAIN] PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
-            logger_dbg.debug(f'[D][BRAIN] PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+            print(f'[D][BRAIN] PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+            logger_dbg.debug(f'[D][BRAIN] PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
         if res in inf.bf_btc:
             addr_c = secp256k1_lib.hash_to_address(0, False, res)
             addr_cbc = secp256k1_lib.hash_to_address(2, False, res)
             if inf.debug > 0:
-                print(f'[D][F][BRAIN] PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
-                logger_dbg.debug(f'[D][F][BRAIN] PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                print(f'[D][F][BRAIN] PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                logger_dbg.debug(f'[D][F][BRAIN] PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
             if inf.debug < 1:
                 if inf.balance:
                     tx1, b1 = get_balance(addr_c,'BTC')
@@ -137,30 +137,30 @@ def bw(text, backspace, fc):
                     tx3, b3 = get_balance(addr_cs,'BTC')
                     tx4, b4 = get_balance(addr_cbc,'BTC')
                     if (tx1 > 0) or (tx4 > 0):
-                        print(f'\n[F][BRAIN] Found transaction! PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c}:{b1} | {addr_uc}:{b2} | {addr_cs}:{b3} | {addr_cbc}:{b4} | {text}')
-                        logger_found.info(f'[F][BRAIN] Found transaction! PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c}:{b1} | {addr_uc}:{b2} | {addr_cs}:{b3} | {addr_cbc}:{b4} | {text}')
+                        print(f'\n[F][BRAIN] Found transaction! PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c}:{b1} | {addr_uc}:{b2} | {addr_cs}:{b3} | {addr_cbc}:{b4} | {text}')
+                        logger_found.info(f'[F][BRAIN] Found transaction! PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c}:{b1} | {addr_uc}:{b2} | {addr_cs}:{b3} | {addr_cbc}:{b4} | {text}')
                     if (b1 > 0) or (b4 > 0):
-                        print(f'\n[F][BRAIN] Found address in balance! PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
-                        logger_found.info(f'[F][BRAIN] Found address in balance! PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                        print(f'\n[F][BRAIN] Found address in balance! PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                        logger_found.info(f'[F][BRAIN] Found address in balance! PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                         if inf.mail:
-                            send_email(f'[F][BRAIN PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                            send_email(f'[F][BRAIN PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                         if inf.telegram:
-                            send_telegram(f'[F][BRAIN PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')  
+                            send_telegram(f'[F][BRAIN PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')  
                         fc.increment(1)
                     else:
-                        print(f'\n[F][BRAIN] Found address balance 0.0 PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
-                        logger_found.info(f'[F][BRAIN] Found address balance 0.0 PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                        print(f'\n[F][BRAIN] Found address balance 0.0 PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                        logger_found.info(f'[F][BRAIN] Found address balance 0.0 PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                         if inf.mail:
-                            send_email(f'[F][BRAIN] Found address balance 0.0 PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                            send_email(f'[F][BRAIN] Found address balance 0.0 PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                         if inf.telegram:
-                            send_telegram(f'[F][BRAIN] Found address balance 0.0 PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                            send_telegram(f'[F][BRAIN] Found address balance 0.0 PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                 else:
-                    print(f'\n[F][BRAIN] Found address PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
-                    logger_found.info(f'[F][BRAIN] Found address PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                    print(f'\n[F][BRAIN] Found address PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                    logger_found.info(f'[F][BRAIN] Found address PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                     if inf.mail:
-                        send_email(f'[F][BRAIN] Found address PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                        send_email(f'[F][BRAIN] Found address PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                     if inf.telegram:
-                        send_telegram(f'[F][BRAIN] Found address PVK:{f1[co//2]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                        send_telegram(f'[F][BRAIN] Found address PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                     fc.increment(1)
         co += 4
     return co
@@ -634,23 +634,24 @@ def belec(fc):
             if (res in inf.bf_btc) or (res2 in inf.bf_btc):
                 fc.increment(1)
                 #print(f'{mnemo} | {seed} | {res}')
-                logger_info.info('found.txt',f'{mnemo} | {seed} | {res}')
+                logger_info.info('found.txt',f'{mnemo} | {seed} | {res} | {res2}')
                 if inf.balance:
                     tx1, b1 = get_balance(res)
+                    tx2, b2 = get_balance(res2)
                     if (tx1 > 0):
-                        print(f'\n[W] Found transaction! | {res}:{b1}')
-                    print(f'\n[W] Found address | {res}:{b1}')
+                        print(f'\n[W] Found transaction! | {res}:{b1} | {res2}:{b2}')
+                    print(f'\n[W] Found address | {res}:{b1} | {res2}:{b2}')
                     if (b1 > 0):
-                        print(f'\n[W] Found address in balance | mnem:{mnemo} | {seed} | {res}')
-                        logger_info.info('found.txt',f'{mnemo} | {seed} | {res}')
+                        print(f'\n[W] Found address in balance | mnem:{mnemo} | {seed} | {res} | {res2}')
+                        logger_info.info('found.txt',f'{mnemo} | {seed} | {res} | {res2}')
                     else:
                         if (b1 < 0): 
-                            print(f'\n[W] Found address | {mnemo} | {seed} | {res}')
-                            logger_info.info(f'log.txt',f'{mnemo} | {seed} | {res}')
+                            print(f'\n[W] Found address | {mnemo} | {seed} | {res} | {res2}')
+                            logger_info.info(f'log.txt',f'{mnemo} | {seed} | {res} | {res2}')
                         print('[W] Found address balance 0.0')
                 else:
-                    print(f'\n[W] Found address | {mnemo} | {seed} | {res}')
-                    logger_info.info(f'found.txt',f'{mnemo} | {seed} | {res}')
+                    print(f'\n[W] Found address | {mnemo} | {seed} | {res} | {res2}')
+                    logger_info.info(f'found.txt',f'{mnemo} | {seed} | {res} | {res2}')
             co +=2
     return co
 
