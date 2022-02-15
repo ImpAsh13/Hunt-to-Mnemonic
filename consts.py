@@ -124,7 +124,7 @@ class inf:
             exit()
         else:
             return l
-    version:str = '* Pulsar v5.4.3 multiT Hash160 *'
+    version:str = '* Pulsar v5.4.4 multiT Hash160 *'
     mnemonic_BTC:list = ['english', 'japanese', 'chinese_simplified', 'chinese_traditional'] # ['english', 'chinese_simplified', 'chinese_traditional', 'french', 'italian', 'spanish', 'korean','japanese','portuguese','czech']
     mnemonic_ETH:list = ['english'] # ['english', 'chinese_simplified', 'chinese_traditional', 'french', 'italian', 'spanish', 'korean','japanese','portuguese','czech']
     #general
