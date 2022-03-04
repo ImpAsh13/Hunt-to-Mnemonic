@@ -69,7 +69,7 @@ def run(*args):
         inf.bf_btc = load_BF(inf.db_btc)
         inf.bf_eth = load_BF(inf.db_eth)
         process_counter.increment(1)
-    else: 
+    elif inf.bip == 'ETH': 
         mnemonic_lang = inf.mnemonic_ETH
         inf.bf_eth = load_BF(inf.db_eth)
         process_counter.increment(1)
@@ -85,15 +85,14 @@ def run(*args):
                 pass
             else:
                 process_counter.decrement(1)
-            start_time = time()
+            start_time = time.time()
             for mem in mnemonic_lang:
                 mnem_counter.increment(1)
                 if inf.elec:
                     eseed = gen_seed('')
                     emnemo = ' '.join(map(str, mn_encode(eseed)))
                     mnem_counter.increment(1)
-                if inf.mode == 'e' : mnemonic, seed_bytes, rnd = nnmnem(mem)
-                else: mnemonic, seed_bytes = nnmnem(mem)
+                mnemonic, seed_bytes = nnmnem(mem)
                 #rnd
                 if inf.rnd and inf.bip == 'combo':
                     rnd_counter.increment(brnd('btc',found_counter))
@@ -107,7 +106,6 @@ def run(*args):
                     brain_counter.increment(bw(mnemonic, found_counter))
                 #electrum
                 if inf.elec and inf.bip !='ETH':
-                    brain_counter.increment(bw(emnemo, found_counter))
                     elec_counter.increment(belec(emnemo, eseed, found_counter))
                 #function bip
                 if inf.bip == "32" : total_counter.increment(b32(mnemonic,seed_bytes, found_counter))
@@ -131,15 +129,19 @@ def run(*args):
             el = elec_counter.value()
             el_float, el_hash = convert_int(el)
             
-            st = time() - start_time
+            st = time.time() - start_time
             ftc = tc
             tc = total_counter.value()
             tc = tc + rn + bc + el
             tc_float, tc_hash = convert_int(tc)
             btc = tc - ftc
-            
-            speed = int((btc/st))
-            speed_float, speed_hash = convert_int(speed)
+            try:
+                speed = int((btc/st))
+            except:
+                speed_float = 0
+                speed_hash = 'h/s'
+            else:
+                speed_float, speed_hash = convert_int(speed)
 
             if multiprocessing.current_process().name == '0':
                 print(f'{yellow}> Cores:{pc} | Mnemonic:{mc} | MNEM/h:{tc_float} {tc_hash} | BRAIN/h:{bc_float} {bc_hash} | RND/h:{rn_float} {rn_hash} | Electrum/h:{el_float} {el_hash} | Total/h:{speed_float} {speed_hash} | Found:{fc}',end='\r')
@@ -247,6 +249,8 @@ if __name__ == "__main__":
     else: print('[I] Telegram: Off')
     if inf.rnd: print('[I] Random check hash: On')
     else: print('[I] Random check hash: off')
+    if inf.elec: print('[I] Search OLD Electrum wallet: On')
+    else: print('[I] Search OLD Electrum wallet: Off')
     print('-'*70,end='\n')
     
     total_counter = Counter(0)
