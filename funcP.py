@@ -70,7 +70,7 @@ def send_telegram(text: str):
             return send_telegram(text)
 
 def convert_int(num:int):
-    dict_suffix = {0:'Key', 1:'KKeys', 2:'MKeys', 3:'GKeys', 4:'TKeys', 5:'PKeys', 6:'EKeys'}
+    dict_suffix = {0:'Key', 1:'KKey', 2:'MKey', 3:'GKey', 4:'TKey', 5:'PKey', 6:'EKeys'}
     num *= 1.0
     idx = 0
     for ii in range(len(dict_suffix)-1):

@@ -144,7 +144,7 @@ def run(*args):
                 speed_float, speed_hash = convert_int(speed)
 
             if multiprocessing.current_process().name == '0':
-                print(f'{yellow}> Cores:{pc} | Mnemonic:{mc} | MNEM/h:{tc_float} {tc_hash} | BRAIN/h:{bc_float} {bc_hash} | RND/h:{rn_float} {rn_hash} | Electrum/h:{el_float} {el_hash} | Total/h:{speed_float} {speed_hash} | Found:{fc}',end='\r')
+                print(f'{yellow}> Cores:{pc} | Mnemonic:{mc} | MNEM:{tc_float} {tc_hash} | BRAIN:{bc_float} {bc_hash} | RND:{rn_float} {rn_hash} | Electrum:{el_float} {el_hash} | Speed:{speed_float} {speed_hash}/sec | Found:{fc}',end='\r')
             inf.count = 0
             ind += 1
     except(KeyboardInterrupt, SystemExit):
