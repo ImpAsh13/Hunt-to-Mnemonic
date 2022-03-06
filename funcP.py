@@ -6,30 +6,17 @@
 
 from consts import *
 
-def normalize_text(seed):
-    # normalize
-    seed = unicodedata.normalize('NFKD', seed)
-    # lower
-    seed = seed.lower()
-    # remove accents
-    seed = u''.join([c for c in seed if not unicodedata.combining(c)])
-    # normalize whitespaces
-    seed = u' '.join(seed.split())
-    # remove whitespaces between CJK
-    seed = u''.join([seed[i] for i in range(len(seed)) if not (seed[i] in string.whitespace)])
-    return seed
-
 def mnemonic_to_seed32(mnemonic, passphrase=''):
     PBKDF2_ROUNDS = 2048
-    mnemonic = normalize_text(mnemonic)
-    passphrase = normalize_text(passphrase)
+    mnemonic = mnemonic
+    passphrase = passphrase
     return pbkdf2.PBKDF2(mnemonic, 'electrum' + passphrase, iterations = PBKDF2_ROUNDS, macmodule = hmac, digestmodule = hashlib.sha512).read(16)
 
 def gen_seed(text):
     tmp = []
     if text == '': return secrets.token_hex(16)
     else:
-        tmp.append(mnemonic_to_seed32(mnemonic=text))
+        tmp.append(mnemonic_to_seed32(text))
         tmp.append(bitcoin.sha256(text)[32:])
         tmp.append(bitcoin.dbl_sha256(text)[32:])
         return tmp
@@ -70,7 +57,7 @@ def send_telegram(text: str):
         requests.get('https://api.telegram.org/bot{}/sendMessage'.format(telegram.token), params=dict(
         chat_id=telegram.channel_id,
         text=text))
-        sleep(20)
+        time.sleep(20)
     except:
         print(f'{red}[E] Error send telegram.')
         logger_err.error(f'[E] Error send telegram.')
@@ -79,38 +66,38 @@ def send_telegram(text: str):
             return
         else: 
             inf.telegram_err += 1
-            sleep(10)
+            time.sleep(10)
             return send_telegram(text)
 
 def convert_int(num:int):
-    dict_suffix = {0:'Key', 1:'KKeys', 2:'MKeys', 3:'GKeys', 4:'TKeys', 5:'PKeys', 6:'EKeys'}
+    dict_suffix = {0:'Key', 1:'KKey', 2:'MKey', 3:'GKey', 4:'TKey', 5:'PKey', 6:'EKeys'}
     num *= 1.0
     idx = 0
     for ii in range(len(dict_suffix)-1):
         if int(num/1000) > 0:
             idx += 1
             num /= 1000
-    return ('%.2f '%num), dict_suffix[idx]
+    return ('%.2f'%num), dict_suffix[idx]
     
 def reverse_string(s):
     return s[::-1]
 
-def bw(text, backspace, fc):
+def bw(text, fc):
     f1 = []
     f2 = []
     co = 0
+    count = 0
     list_text = text.split()
-    for i in range(24):
+    for i in range(12):
         res_text = ' '.join([str(item) for item in list_text]) 
-        if backspace: no_bs = res_text.replace(' ', '')
         text_rev = reverse_string(res_text)
         f1.append(bitcoin.sha256(res_text))
-        if backspace: f1.append(bitcoin.sha256(no_bs))
         f1.append(bitcoin.sha256(text_rev))
         f1.append(bitcoin.dbl_sha256(res_text))
-        if backspace: f1.append(bitcoin.dbl_sha256(no_bs))
         f1.append(bitcoin.dbl_sha256(text_rev))
+        co += 4
         random.shuffle(list_text)
+    co -=1
     for res in f1:
         f2.append(secp256k1_lib.privatekey_to_h160(1, True, int(res,16)))
         f2.append(secp256k1_lib.privatekey_to_h160(0, True, int(res,16)))
@@ -121,7 +108,6 @@ def bw(text, backspace, fc):
             addr_uc = secp256k1_lib.hash_to_address(0, False, res)
             addr_cs = secp256k1_lib.hash_to_address(1, False, res)
             addr_cbc = secp256k1_lib.hash_to_address(2, False, res)
-            
             print(f'[D][BRAIN] PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
             logger_dbg.debug(f'[D][BRAIN] PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
         if res in inf.bf_btc:
@@ -136,12 +122,12 @@ def bw(text, backspace, fc):
                     tx2, b2 = get_balance(addr_uc,'BTC')
                     tx3, b3 = get_balance(addr_cs,'BTC')
                     tx4, b4 = get_balance(addr_cbc,'BTC')
-                    if (tx1 > 0) or (tx4 > 0):
-                        print(f'\n[F][BRAIN] Found transaction! PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c}:{b1} | {addr_uc}:{b2} | {addr_cs}:{b3} | {addr_cbc}:{b4} | {text}')
+                    if (tx1 > 0) or (tx2 > 0) or (tx3 > 0) or (tx4 > 0):
+                        print(f'\n[F][BRAIN] Found transaction! PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c}:{tx1} | {addr_uc}:{tx2} | {addr_cs}:{tx3} | {addr_cbc}:{tx4} | {text}')
                         logger_found.info(f'[F][BRAIN] Found transaction! PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c}:{b1} | {addr_uc}:{b2} | {addr_cs}:{b3} | {addr_cbc}:{b4} | {text}')
-                    if (b1 > 0) or (b4 > 0):
-                        print(f'\n[F][BRAIN] Found address in balance! PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
-                        logger_found.info(f'[F][BRAIN] Found address in balance! PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                    if (b1 > 0) or (b2 > 0) or (b3 > 0) or (b4 > 0):
+                        print(f'\n[F][BRAIN] Found address in balance! PVK:{f1[co]} | HASH160:{res.hex()} |  {addr_c}:{b1} | {addr_uc}:{b2} | {addr_cs}:{b3} | {addr_cbc}:{b4} | {text}')
+                        logger_found.info(f'[F][BRAIN] Found address in balance! PVK:{f1[co]} | HASH160:{res.hex()} |  {addr_c}:{b1} | {addr_uc}:{b2} | {addr_cs}:{b3} | {addr_cbc}:{b4} | {text}')
                         if inf.mail:
                             send_email(f'[F][BRAIN PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                         if inf.telegram:
@@ -162,11 +148,11 @@ def bw(text, backspace, fc):
                     if inf.telegram:
                         send_telegram(f'[F][BRAIN] Found address PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                     fc.increment(1)
-        co += 4
-    return co
+        count += 4
+    return count
 
 def get_balance(address,cyr):
-    sleep(11) 
+    time.sleep(11) 
     if cyr == 'ETH':
         try:
             response = requests.get(inf.ETH_bal_server[1] + '0x' + address)
@@ -213,7 +199,7 @@ def load_BF(load):
         sys.exit()
     else:
         n_int = int(multiprocessing.current_process().name)
-        sleep(inf.delay*n_int)
+        time.sleep(inf.delay*n_int)
         return BloomFilter.load(fp)
 
 def send_email(text):
@@ -360,7 +346,7 @@ def brnd(bip, fc):
             co += 1
         return co
 
-    group_size = 10000
+    group_size = 500
     pvk_int = generate_private_key()
     P = secp256k1_lib.scalar_multiplication(pvk_int)
     current_pvk = pvk_int + 1
@@ -374,12 +360,12 @@ def brnd(bip, fc):
 
 def b32(mnem, seed, fc):
     co = 0
-    group_size = 100
+    group_size = 10
     bip32 = BIP32.from_seed(seed)
     for path in inf.l32:
         for num1 in range(1):
             for t in inf.l32_:
-                for num2 in range(20):
+                for num2 in range(10):
                     for t1 in inf.l32_:
                         patchs = f"{path}{num1}{t}/{num2}{t1}"
                         pvk = bip32.get_privkey_from_path(patchs)
@@ -452,13 +438,13 @@ def b32(mnem, seed, fc):
 
 def bETH(mnem, seed, fc):
     co = 0
-    group_size = 150
+    group_size = 10
     w = BIP32.from_seed(seed)
     for bi in range(2):
         for p in inf.leth:
             for nom2 in range(1):#accaunt
                 for nom3 in range(2):#in/out
-                    for nom in range(20):
+                    for nom in range(10):
                         if bi == 0:
                             patchs = f"m/44'/{p}'/{nom2}'/{nom3}/{nom}"
                         elif bi == 1:
@@ -510,12 +496,12 @@ def bETH(mnem, seed, fc):
 
 def b44(mnem, seed, fc):
     co = 0
-    group_size = 100
+    group_size = 10
     w = BIP32.from_seed(seed)
     for p in inf.l44:
         for nom2 in range(1):#accaunt
             for nom3 in range(2):#in/out
-                for nom in range(20):
+                for nom in range(10):
                     patchs = f"m/44'/{p}'/{nom2}'/{nom3}/{nom}"
                     pvk = w.get_privkey_from_path(patchs)
                     pvk_int = int(pvk.hex(),16)
@@ -546,12 +532,12 @@ def b44(mnem, seed, fc):
 
 def bBTC(mnem, seed, fc):
     co = 0
-    group_size = 100
+    group_size = 10
     w = BIP32.from_seed(seed)
     for bip_ in inf.lbtc:
         for nom2 in range(1):
             for nom3 in range(2):
-                for nom in range(20):
+                for nom in range(10):
                     patchs = f"m/{bip_}'/0'/{nom2}'/{nom3}/{nom}"
                     pvk = w.get_privkey_from_path(patchs)
                     pvk_int = int(pvk.hex(),16)
@@ -620,155 +606,89 @@ def bBTC(mnem, seed, fc):
                         co += 3
     return co
 
-def belec(fc):
+def belec(emnemo, eseed, fc):
     co = 0
-    seed = gen_seed('')
-    mnemo = mn_encode(seed)
+    seed = eseed
+    mnemo = emnemo
     mpub = bitcoin.electrum_mpk(seed)
     for i in range(2):
-        for ii in range(20):
+        for ii in range(10):
             pub = bitcoin.from_string_to_bytes(bitcoin.electrum_pubkey(mpub, ii, i))
-            gl = bitcoin.from_string_to_bytes('04'+ mpub)
             res = secp256k1_lib.pubkey_to_h160(0,False,pub).hex()
-            res2 = secp256k1_lib.pubkey_to_h160(0,False,gl).hex()
-            if (res in inf.bf_btc) or (res2 in inf.bf_btc):
+            if (res in inf.bf_btc):
                 fc.increment(1)
-                #print(f'{mnemo} | {seed} | {res}')
-                logger_info.info('found.txt',f'{mnemo} | {seed} | {res} | {res2}')
+                logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res}')
                 if inf.balance:
                     tx1, b1 = get_balance(res)
-                    tx2, b2 = get_balance(res2)
                     if (tx1 > 0):
-                        print(f'\n[W] Found transaction! | {res}:{b1} | {res2}:{b2}')
-                    print(f'\n[W] Found address | {res}:{b1} | {res2}:{b2}')
+                        print(f'\n[F][Mode Electrum] Found transaction! | {res}:{tx1}')
+                        logger_found.info(f'\n[F][Mode Electrum] Found transaction! | {res}:{tx1}')
+                    print(f'\n[F][Mode Electrum] Found address | {res}:{tx1}')
+                    logger_found.info(f'\n[F][Mode Electrum] Found address | {res}:{tx1}')
                     if (b1 > 0):
-                        print(f'\n[W] Found address in balance | mnem:{mnemo} | {seed} | {res} | {res2}')
-                        logger_info.info('found.txt',f'{mnemo} | {seed} | {res} | {res2}')
+                        print(f'\n[F][Mode Electrum] Found address in balance | mnem:{mnemo} | {seed} | {res}:{b1}')
+                        logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res}:{b1}')
                     else:
                         if (b1 < 0): 
-                            print(f'\n[W] Found address | {mnemo} | {seed} | {res} | {res2}')
-                            logger_info.info(f'log.txt',f'{mnemo} | {seed} | {res} | {res2}')
-                        print('[W] Found address balance 0.0')
+                            print(f'\n[F][Mode Electrum] Found address | {mnemo} | {seed} | {res}')
+                            logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res}')
+                        print('[F][Mode Electrum] Found address balance 0.0')
                 else:
-                    print(f'\n[W] Found address | {mnemo} | {seed} | {res} | {res2}')
-                    logger_info.info(f'found.txt',f'{mnemo} | {seed} | {res} | {res2}')
-            co +=2
+                    print(f'\n[F][Mode Electrum] Found address | {mnemo} | {seed} | {res}')
+                    logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res}')
+            co +=1
     return co
 
-
 def nnmnem(mem):
-    def normalize_text(seed):
-        # normalize
-        seed = unicodedata.normalize('NFKD', seed)
-        # lower
-        seed = seed.lower()
-        # remove accents
-        seed = u''.join([c for c in seed if not unicodedata.combining(c)])
-        # normalize whitespaces
-        seed = u' '.join(seed.split())
-        # remove whitespaces between CJK
-        seed = u''.join([seed[i] for i in range(len(seed)) if not (seed[i] in string.whitespace)])
-        return seed
-
-    def mnemonic_to_seed32(mnemonic, passphrase=''):
-        PBKDF2_ROUNDS = 2048
-        mnemonic = normalize_text(mnemonic)
-        passphrase = normalize_text(passphrase)
-        return pbkdf2.PBKDF2(mnemonic, 'electrum' + passphrase, iterations = PBKDF2_ROUNDS, macmodule = hmac, digestmodule = hashlib.sha512).read(16)
-
-    def gen_seed(text):
-        if text == '': return bitcoin.random_electrum_seed()
-        else:
-            return mnemonic_to_seed32(mnemonic=text), bitcoin.sha256('text')[32:], bitcoin.dbl_sha256('text')[32:]
-
-    def mn_encode( message ):
-        n = 1626
-        assert len(message) % 8 == 0
-        out = []
-        for i in range(len(message)//8):
-            word = message[8*i:8*i+8]
-            x = int(word, 16)
-            w1 = (x%n)
-            w2 = ((x//n) + w1)%n
-            w3 = ((x//n//n) + w2)%n
-            out += [ inf.elec_list[w1], inf.elec_list[w2], inf.elec_list[w3] ]
-        return out
-
-    def mn_decode( wlist ):
-        out = ''
-        n = 1626
-        for i in range(len(wlist)//3):
-            word1, word2, word3 = wlist[3*i:3*i+3]
-            w1 =  inf.elec_list.index(word1)
-            w2 = (inf.elec_list.index(word2))%n
-            w3 = (inf.elec_list.index(word3))%n
-            x = w1 +n*((w2-w1)%n) +n*n*((w3-w2)%n)
-            out += '%08x'%x
-        return out
-    
-    if inf.bip == 'elec':
-        if inf.mode == 's':
-            mnemonic = ' '.join(secrets.choice(inf.elec_list) for i in range(12))
-            w1 = mnemonic.split()
-            seed = mn_decode(w1)
-            return mnemonic, seed
-        else:
-            seed = gen_seed('')
-            mnemonic = mn_encode(seed)
-            return mnemonic, seed
+    if inf.mode == 'e':
+        mnemo:Mnemonic = Mnemonic(mem)
+        if inf.bit == 128: bit = 16
+        if inf.bit == 160: bit = 20
+        if inf.bit == 192: bit = 24
+        if inf.bit == 224: bit = 28
+        if inf.bit == 256: bit = 32
+        #ran = secrets.token_hex(bit)
+        mnemonic = cryptos.entropy_to_words(os.urandom(bit)) #mnemo.to_mnemonic(bytes.fromhex(ran))
+        seed_bytes = cryptos.mnemonic_to_seed(mnemonic, passphrase='') #mnemo.to_seed(mnemonic, passphrase='')
+    elif inf.mode =='g':
+        mnemonic = ''
+        mnemo:Mnemonic = Mnemonic(mem)
+        rw = randint(1,25)
+        mnemonic = ' '.join(choice(inf.game_list) for i in range(rw))
+        seed_bytes:bytes = mnemo.to_seed(mnemonic, passphrase='')
+    elif inf.mode =='c':
+        mnemonic = ''
+        mnemo:Mnemonic = Mnemonic(mem)
+        rw = inf.custom_words
+        mnemonic = ' '.join(choice(inf.custom_list) for i in range(rw))
+        seed_bytes:bytes = mnemo.to_seed(mnemonic, passphrase='')
     else:
-        if inf.mode == 'e':
-            mnemo:Mnemonic = Mnemonic(mem)
-            if inf.bit == 128: bit = 16
-            if inf.bit == 160: bit = 20
-            if inf.bit == 192: bit = 24
-            if inf.bit == 224: bit = 28
-            if inf.bit == 256: bit = 32
-            ran = secrets.token_hex(bit)
-            mnemonic = mnemo.to_mnemonic(bytes.fromhex(ran))
-            seed_bytes = mnemo.to_seed(mnemonic, passphrase='')
-        elif inf.mode =='g':
-            mnemonic = ''
-            mnemo:Mnemonic = Mnemonic(mem)
-            rw = randint(1,25)
-            mnemonic = ' '.join(choice(inf.game_list) for i in range(rw))
-            seed_bytes:bytes = mnemo.to_seed(mnemonic, passphrase='')
-        elif inf.mode =='c':
-            mnemonic = ''
-            mnemo:Mnemonic = Mnemonic(mem)
-            rw = inf.custom_words
-            mnemonic = ' '.join(choice(inf.custom_list) for i in range(rw))
-            seed_bytes:bytes = mnemo.to_seed(mnemonic, passphrase='')
-        else:
-            mnemo:Mnemonic = Mnemonic(mem)
-            mnemonic:str = mnemo.generate(strength=inf.bit)
-            seed_bytes:bytes = mnemo.to_seed(mnemonic, passphrase='')
-    
-        if inf.debug==1:
-            mnemo = Mnemonic('english')
-            mnemonic = 'world evolve cry outer garden common differ jump few diet cliff lumber'
-            seed_bytes:bytes = mnemo.to_seed(mnemonic, passphrase='')
-            print(f'Debug Mnemonic : {mnemonic}')
-            print(f'Debug SEED : {seed_bytes.hex()}')
-            logger_dbg.debug(f'[D] Debug Mnemonic : {mnemonic}')
-            logger_dbg.debug(f'[D] Debug SEED : {seed_bytes.hex()}')
-        if inf.debug==2:
-            if inf.mode == 'e':
-                print(f'Entropy : {ran}')
-            print(f'Debug Mnemonic : {mnemonic}')
-            print(f'Debug SEED : {seed_bytes.hex()}')
-            logger_dbg.debug(f'[D] Debug Mnemonic : {mnemonic}')
-            logger_dbg.debug(f'[D] Debug SEED : {seed_bytes.hex()}')
-            
-        if inf.mode == 'e' : return mnemonic, seed_bytes , ran
-        else: return mnemonic, seed_bytes
+        mnemo:Mnemonic = Mnemonic(mem)
+        mnemonic:str = mnemo.generate(strength=inf.bit)
+        seed_bytes:bytes = mnemo.to_seed(mnemonic, passphrase='')
+
+    if inf.debug==1:
+        mnemo = Mnemonic('english')
+        mnemonic = 'world evolve cry outer garden common differ jump few diet cliff lumber'
+        seed_bytes:bytes = mnemo.to_seed(mnemonic, passphrase='')
+        print(f'Debug Mnemonic : {mnemonic}')
+        print(f'Debug SEED : {seed_bytes.hex()}')
+        logger_dbg.debug(f'[D] Debug Mnemonic : {mnemonic}')
+        logger_dbg.debug(f'[D] Debug SEED : {seed_bytes.hex()}')
+    if inf.debug==2:
+        print(f'Debug Mnemonic : {mnemonic}')
+        print(f'Debug SEED : {seed_bytes.hex()}')
+        logger_dbg.debug(f'[D] Debug Mnemonic : {mnemonic}')
+        logger_dbg.debug(f'[D] Debug SEED : {seed_bytes.hex()}')
+        
+    return mnemonic, seed_bytes
 
 def test():
     if inf.telegram:
         try:
-            requests.get('https://api.telegram.org/bot{}/sendMessage'.format(telegram.token), params=dict(
+            requests.get(f'https://api.telegram.org/bot{telegram.token}/sendMessage', params=dict(
             chat_id=telegram.channel_id,
-            text=f'Сommunication check. HUNT-to-mnemonic ver.{inf.version}. run client {email.desc}'
+            text=f'Сommunication check. HUNT-to-mnemonic ver.{inf.version}, run client:{email.desc}, core:{inf.th}, BIP:{inf.bip}, mode:{inf.mode}'
             ))
         except:
             print(f'{red} check your internet connection, could not send message to telegram')

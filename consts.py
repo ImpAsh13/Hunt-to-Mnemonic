@@ -10,7 +10,7 @@ from bloomfilter import BloomFilter
 from colorama import Back, Fore, Style, init
 from mnemonic import Mnemonic
 from multiprocessing import Lock, Process, Value
-from time import sleep, time
+import time
 import logging
 from logging import Formatter
 import argparse, unicodedata, ctypes, hmac, datetime
@@ -23,6 +23,7 @@ from secrets import choice
 import bitcoin
 import requests
 import secp256k1_lib
+import cryptos
 init(autoreset = True)
 
 yellow = Fore.YELLOW+Style.BRIGHT
@@ -124,8 +125,8 @@ class inf:
             exit()
         else:
             return l
-    version:str = '* Pulsar v5.4.3 multiT Hash160 *'
-    mnemonic_BTC:list = ['english', 'japanese', 'chinese_simplified', 'chinese_traditional'] # ['english', 'chinese_simplified', 'chinese_traditional', 'french', 'italian', 'spanish', 'korean','japanese','portuguese','czech']
+    version:str = '* Pulsar v5.5.3 multiT Hash160 *'
+    mnemonic_BTC:list = ['english'] # ['english', 'chinese_simplified', 'chinese_traditional', 'french', 'italian', 'spanish', 'korean','japanese','portuguese','czech']
     mnemonic_ETH:list = ['english'] # ['english', 'chinese_simplified', 'chinese_traditional', 'french', 'italian', 'spanish', 'korean','japanese','portuguese','czech']
     #general
     th:int = 1 #number of processes
@@ -135,10 +136,10 @@ class inf:
     db_btc:str = ''
     db_eth:str = ''
     lbtc:list = ['44','49','84']
-    l32:list = ["m/0'/", "m/44'/0'/", "m/0/"]
-    l32_:list = [""]#"","'"
-    l44:list = ['0','145','236'] # ["0","145","236","156","177","222","192","2","3","5","7","8","20","22","28","90","133","147","2301","175","216"]
-    leth:list = ['60','61'] #['60','61']
+    l32:list = ["m/","m/0'/", "m/44'/0'/", "m/0/"]
+    l32_:list = ["","'"]#"","'"
+    l44:list = ['0'] # ["0","145","236","156","177","222","192","2","3","5","7","8","20","22","28","90","133","147","2301","175","216"]
+    leth:list = ['60'] #['60','61']
     bip:str = 'BTC'
     game_list:list = []
     rnd = False
