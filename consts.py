@@ -24,6 +24,8 @@ import bitcoin
 import requests
 import secp256k1_lib
 import cryptos
+from btclib.mnemonic import electrum
+from bitcoinlib.encoding import addr_base58_to_pubkeyhash,addr_bech32_to_pubkeyhash
 init(autoreset = True)
 
 yellow = Fore.YELLOW+Style.BRIGHT
@@ -125,7 +127,7 @@ class inf:
             exit()
         else:
             return l
-    version:str = '* Pulsar v5.5.3 multiT Hash160 *'
+    version:str = '* Pulsar v5.5.5 multiT Hash160 *'
     mnemonic_BTC:list = ['english'] # ['english', 'chinese_simplified', 'chinese_traditional', 'french', 'italian', 'spanish', 'korean','japanese','portuguese','czech']
     mnemonic_ETH:list = ['english'] # ['english', 'chinese_simplified', 'chinese_traditional', 'french', 'italian', 'spanish', 'korean','japanese','portuguese','czech']
     #general
