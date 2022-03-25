@@ -12,16 +12,15 @@ def mnemonic_to_seed32(mnemonic, passphrase=''):
     passphrase = passphrase
     return pbkdf2.PBKDF2(mnemonic, 'electrum' + passphrase, iterations = PBKDF2_ROUNDS, macmodule = hmac, digestmodule = hashlib.sha512).read(16)
 
-def gen_seed(text):
+def gen_seed():
     tmp = []
-    if text == '': return secrets.token_hex(16)
-    else:
-        tmp.append(mnemonic_to_seed32(text))
-        tmp.append(bitcoin.sha256(text)[32:])
-        tmp.append(bitcoin.dbl_sha256(text)[32:])
-        return tmp
+    # print(int.from_bytes(os.urandom(16), "big"))
+    # print(hex(int.from_bytes(os.urandom(16), "big")))
+    # print(hex(int.from_bytes(os.urandom(16), "big"))[2:])
+    # print(secrets.token_hex(16))
+    return secrets.token_hex(16)
 
-def mn_encode( message ):
+def mn_encode(message):
     n = 1626
     assert len(message) % 8 == 0
     out = []
@@ -131,7 +130,7 @@ def bw(text, fc):
                         if inf.mail:
                             send_email(f'[F][BRAIN PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                         if inf.telegram:
-                            send_telegram(f'[F][BRAIN PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')  
+                            send_telegram(f'[F] {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')  
                         fc.increment(1)
                     else:
                         print(f'\n[F][BRAIN] Found address balance 0.0 PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
@@ -139,14 +138,14 @@ def bw(text, fc):
                         if inf.mail:
                             send_email(f'[F][BRAIN] Found address balance 0.0 PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                         if inf.telegram:
-                            send_telegram(f'[F][BRAIN] Found address balance 0.0 PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                            send_telegram(f'[F][BRAIN] Found address balance 0.0 {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                 else:
                     print(f'\n[F][BRAIN] Found address PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                     logger_found.info(f'[F][BRAIN] Found address PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                     if inf.mail:
                         send_email(f'[F][BRAIN] Found address PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                     if inf.telegram:
-                        send_telegram(f'[F][BRAIN] Found address PVK:{f1[co]} | HASH160:{res.hex()} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
+                        send_telegram(f'[F][BRAIN] Found address {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc} | {text}')
                     fc.increment(1)
         count += 4
     return count
@@ -261,7 +260,7 @@ def brnd(bip, fc):
             if (bip32_h160_c.hex() in inf.bf_btc) or (bip32_h160_uc.hex() in inf.bf_btc) or (bip32_h160_cs.hex() in inf.bf_btc):
                 if inf.debug > 0:
                     if inf.telegram:
-                        send_telegram(f'[D][F][Mode RND BTC] (PG:{tmp}) | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
+                        send_telegram(f'[D][F][Mode RND BTC] (PG:{tmp}) | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                     if inf.mail:
                         send_email(f'[D][F][Mode RND BTC] (PG:{tmp}) | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                     print(f'[D][F][Mode RND BTC] (PG:{tmp}) | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
@@ -284,7 +283,7 @@ def brnd(bip, fc):
                             print(f'\n[F][Mode RND BTC] Found address in balance! (PG:{tmp}) | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                             logger_found.info(f'[F][Mode RND BTC] Found address in balance! (PG:{tmp}) | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                             if inf.telegram:
-                                send_telegram(f'[F][Mode RND BTC] (PG:{tmp}) | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')    
+                                send_telegram(f'[F][Mode RND BTC] (PG:{tmp}) | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')    
                             if inf.mail:
                                 send_email(f'[F][Mode RND BTC] (PG:{tmp}) | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')    
                             fc.increment(1)
@@ -292,14 +291,14 @@ def brnd(bip, fc):
                             print(f'\n[F][Mode RND BTC] Found address balance 0.0 (PG:{tmp}) | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                             logger_found.info(f'[F][Mode RND BTC] Found address balance 0.0 (PG:{tmp}) | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                             if inf.telegram:
-                                send_telegram(f'[F][Mode RND BTC] Found address balance 0.0 (PG:{tmp}) | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
+                                send_telegram(f'[F][Mode RND BTC] Found address balance 0.0 (PG:{tmp}) | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                             if inf.mail:
                                 send_email(f'[F][Mode RND BTC] Found address balance 0.0 (PG:{tmp}) | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                     else:
                         print(f'\n[F][Mode RND BTC] Found address (PG:{tmp}) | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                         logger_found.info(f'[F][Mode RND BTC] Found address (PG:{tmp}) | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                         if inf.telegram:
-                            send_telegram(f'[F][Mode RND BTC] Found address (PG:{tmp}) | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
+                            send_telegram(f'[F][Mode RND BTC] Found address (PG:{tmp}) | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                         if inf.mail:
                             send_email(f'[F][Mode RND BTC] Found address (PG:{tmp}) | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                         fc.increment(1)
@@ -324,7 +323,7 @@ def brnd(bip, fc):
                             print(f'[F][Mode RND ETH] Found address in balance! (PG:{t}) | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                             logger_found.info(f'[F][Mode RND ETH] Found address in balance! (PG:{t}) | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                             if inf.telegram:
-                                send_telegram(f'[F][Mode RND ETH] Found address in balance! (PG:{t}) | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
+                                send_telegram(f'[F][Mode RND ETH] Found address in balance! (PG:{t}) | addr:0x{addr}')
                             if inf.mail:
                                 send_email(f'[F][Mode RND ETH] Found address in balance! (PG:{t}) | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                             fc.increment(1)
@@ -332,14 +331,14 @@ def brnd(bip, fc):
                             print(f'\n[F][Mode RND ETH] Found address balance 0.0: (PG:{t}) | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                             logger_found.info(f'[F][Mode RND ETH] Found address balance 0.0 (PG:{t}) | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                             if inf.telegram:
-                                send_telegram(f'[F][Mode RND ETH] Found address balance 0.0 (PG:{t}) | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
+                                send_telegram(f'[F][Mode RND ETH] Found address balance 0.0 (PG:{t}) | addr:0x{addr}')
                             if inf.mail:
                                 send_email(f'[F][Mode RND ETH] Found address balance 0.0 (PG:{t}) | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                     else:
                         print(f'\n[F][Mode RND ETH] (PG:{t}) | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                         logger_found.info(f'[F][Mode RND ETH] (PG:{t}) | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                         if inf.telegram:
-                            send_telegram(f'[F][Mode RND ETH] (PG:{t}) | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
+                            send_telegram(f'[F][Mode RND ETH] (PG:{t}) | addr:0x{addr}')
                         if inf.mail:
                             send_email(f'[F][Mode RND ETH] (PG:{t}) | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                         fc.increment(1)
@@ -391,7 +390,7 @@ def b32(mnem, seed, fc):
                             if (bip32_h160_c.hex() in inf.bf_btc) or (bip32_h160_uc.hex() in inf.bf_btc) or (bip32_h160_cs.hex() in inf.bf_btc):
                                 if inf.debug > 0:
                                     if inf.telegram:
-                                        send_telegram(f'[D][F][Mode 32] {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
+                                        send_telegram(f'[D][F][Mode 32] {patchs}(PG:{tmp}) | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                     if inf.mail:
                                         send_email(f'[D][F][Mode 32] {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                     print(f'[D][F][Mode 32] {patchs}(PG:{tmp}) | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
@@ -414,7 +413,7 @@ def b32(mnem, seed, fc):
                                             print(f'\n[F][Mode 32] Found address in balance! {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                             logger_found.info(f'[F][Mode 32] Found address in balance! {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                             if inf.telegram:
-                                                send_telegram(f'[F][Mode 32] {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')    
+                                                send_telegram(f'[F][Mode 32] {patchs}(PG:{tmp}) | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')    
                                             if inf.mail:
                                                 send_email(f'[F][Mode 32] {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')    
                                             fc.increment(1)
@@ -422,14 +421,14 @@ def b32(mnem, seed, fc):
                                             print(f'\n[F][Mode 32] Found address balance 0.0 {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                             logger_found.info(f'[F][Mode 32] Found address balance 0.0 {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                             if inf.telegram:
-                                                send_telegram(f'[F][Mode 32] Found address balance 0.0 {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
+                                                send_telegram(f'[F][Mode 32] Found address balance 0.0 {patchs}(PG:{tmp}) | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                             if inf.mail:
                                                 send_email(f'[F][Mode 32] Found address balance 0.0 {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                     else:
                                         print(f'\n[F][Mode 32] Found address {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                         logger_found.info(f'[F][Mode 32] Found address {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                         if inf.telegram:
-                                            send_telegram(f'[F][Mode 32] Found address {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
+                                            send_telegram(f'[F][Mode 32] Found address {patchs}(PG:{tmp}) | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                         if inf.mail:
                                             send_email(f'[F][Mode 32] Found address {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                         fc.increment(1)
@@ -472,7 +471,7 @@ def bETH(mnem, seed, fc):
                                             print(f'[F][Mode ETH] Found address in balance! {patchs}(PG:{t}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                                             logger_found.info(f'[F][Mode ETH] Found address in balance! {patchs}(PG:{t}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                                             if inf.telegram:
-                                                send_telegram(f'[F][Mode ETH] Found address in balance! {patchs}(PG:{t}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
+                                                send_telegram(f'[F][Mode ETH] Found address in balance! {patchs}(PG:{t}) | addr:0x{addr}')
                                             if inf.mail:
                                                 send_email(f'[F][Mode ETH] Found address in balance! {patchs}(PG:{t}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                                             fc.increment(1)
@@ -480,14 +479,14 @@ def bETH(mnem, seed, fc):
                                             print(f'\n[F][Mode ETH] Found address balance 0.0: {patchs}(PG:{t}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                                             logger_found.info(f'[F][Mode ETH] Found address balance 0.0 {patchs}(PG:{t}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                                             if inf.telegram:
-                                                send_telegram(f'[F][Mode ETH] Found address balance 0.0 {patchs}(PG:{t}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
+                                                send_telegram(f'[F][Mode ETH] Found address balance 0.0 {patchs}(PG:{t}) | addr:0x{addr}')
                                             if inf.mail:
                                                 send_email(f'[F][Mode ETH] Found address balance 0.0 {patchs}(PG:{t})  {mnem} | {seed.hex()} || PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                                     else:
                                         print(f'\n[F][Mode ETH] {patchs}(PG:{t}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                                         logger_found.info(f'[F][Mode ETH] {patchs}(PG:{t}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                                         if inf.telegram:
-                                            send_telegram(f'[F][Mode ETH] {patchs}(PG:{t}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
+                                            send_telegram(f'[F][Mode ETH] {patchs}(PG:{t}) | addr:0x{addr}')
                                         if inf.mail:
                                             send_email(f'[F][Mode ETH] {patchs}(PG:{t}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+t)[2:]} | addr:0x{addr}')
                                         fc.increment(1)
@@ -523,7 +522,7 @@ def b44(mnem, seed, fc):
                                 print(f'\n[F][Mode 44 BTC] {patchs} | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | HASH160:{bip44_h160_c.hex()} | HASH160:{bip44_h160_uc.hex()} | HASH160:{bip44_h160_cs.hex()}')
                                 logger_found.info(f'[F][Mode 44 BTC] {patchs} | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | HASH160:{bip44_h160_c.hex()} | HASH160:{bip44_h160_uc.hex()} | HASH160:{bip44_h160_cs.hex()}')
                                 if inf.telegram:
-                                    send_telegram(f'[F][Mode 44 BTC] {patchs} | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | HASH160:{bip44_h160_c.hex()} | HASH160:{bip44_h160_uc.hex()} | HASH160:{bip44_h160_cs.hex()}')
+                                    send_telegram(f'[F][Mode 44 BTC] {patchs} | HASH160:{bip44_h160_c.hex()} | HASH160:{bip44_h160_uc.hex()} | HASH160:{bip44_h160_cs.hex()}')
                                 if inf.mail:
                                     send_email(f'[F][Mode 44 BTC] {patchs} | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | HASH160:{bip44_h160_c.hex()} | HASH160:{bip44_h160_uc.hex()} | HASH160:{bip44_h160_cs.hex()}')
                                 fc.increment(1)
@@ -562,7 +561,7 @@ def bBTC(mnem, seed, fc):
                         if (bip44_h160_c.hex() in inf.bf_btc) or (bip44_h160_uc.hex() in inf.bf_btc) or (bip44_h160_cs.hex() in inf.bf_btc):
                             if inf.debug > 0:
                                 if inf.telegram:
-                                    send_telegram(f'[D][F][Mode BTC] {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
+                                    send_telegram(f'[D][F][Mode BTC] {patchs}(PG:{tmp}) | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                 if inf.mail:
                                     send_email(f'[D][F][Mode BTC] {patchs}(PG:{tmp}) | | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                 print(f'[D][F][Mode BTC][P:{multiprocessing.current_process().name}] {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
@@ -584,29 +583,29 @@ def bBTC(mnem, seed, fc):
                                         print(f'\n[F][Mode BTC] Found balance! {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                         logger_found.info(f'[F][Mode BTC] Found balance! {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                         if inf.telegram:
-                                            send_telegram(f'[F][Mode BTC] {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
+                                            send_telegram(f'[F][Mode BTC] {patchs}(PG:{tmp}) | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                         if inf.mail:
-                                            send_email(f'[F][Mode BTC] Found balance! {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')    
+                                            send_email(f'[F][Mode BTC] Found balance! {patchs}(PG:{tmp}) | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')    
                                         fc.increment(1)
                                     else:
                                         print(f'\n[F False][Mode BTC] Found address balance 0.0  {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                         logger_found.info(f'[F False][Mode BTC] Found address balance 0.0 {patchs} | {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                         if inf.telegram:
-                                            send_telegram(f'[F][Mode BTC] {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
+                                            send_telegram(f'[F][Mode BTC] {patchs}(PG:{tmp}) | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                         if inf.mail:
                                             send_email(f'[F False][Mode BTC] Found address balance 0.0 {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                 else:
                                     print(f'\n[F][Mode BTC] {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                     logger_found.info(f'[F][Mode BTC] {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                     if inf.telegram:
-                                        send_telegram(f'[F][Mode BTC] {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
+                                        send_telegram(f'[F][Mode BTC] {patchs}(PG:{tmp}) | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                     if inf.mail:
                                         send_email(f'[F][Mode BTC] {patchs}(PG:{tmp}) | {mnem} | {seed.hex()} | PVK:{hex(current_pvk+tmp)[2:]} | {addr_c} | {addr_uc} | {addr_cs} | {addr_cbc}')
                                     fc.increment(1)
                         co += 3
     return co
 
-def belec(emnemo, eseed, fc):
+def belecold(emnemo, eseed, fc):
     co = 0
     seed = eseed
     mnemo = emnemo
@@ -614,7 +613,8 @@ def belec(emnemo, eseed, fc):
     for i in range(2):
         for ii in range(10):
             pub = bitcoin.from_string_to_bytes(bitcoin.electrum_pubkey(mpub, ii, i))
-            res = secp256k1_lib.pubkey_to_h160(0,False,pub).hex()
+            addr = bitcoin.pubkey_to_address(pub)
+            res = addr_base58_to_pubkeyhash(addr, as_hex=True)
             if (res in inf.bf_btc):
                 fc.increment(1)
                 logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res}')
@@ -628,16 +628,74 @@ def belec(emnemo, eseed, fc):
                     if (b1 > 0):
                         print(f'\n[F][Mode Electrum] Found address in balance | mnem:{mnemo} | {seed} | {res}:{b1}')
                         logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res}:{b1}')
+                        if inf.telegram:
+                            send_telegram(f'[F][Mode Elec] | {res}')
+                        if inf.mail:
+                            send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res}')
                     else:
-                        if (b1 < 0): 
-                            print(f'\n[F][Mode Electrum] Found address | {mnemo} | {seed} | {res}')
-                            logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res}')
+                        print(f'\n[F][Mode Electrum] Found address | {mnemo} | {seed} | {res}')
+                        logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res}')
+                        if inf.telegram:
+                            send_telegram(f'[F][Mode Elec] | {res}')
+                        if inf.mail:
+                            send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res}')
                         print('[F][Mode Electrum] Found address balance 0.0')
                 else:
                     print(f'\n[F][Mode Electrum] Found address | {mnemo} | {seed} | {res}')
                     logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res}')
+                    if inf.telegram:
+                        send_telegram(f'[F][Mode Elec] | {res}')
+                    if inf.mail:
+                        send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res}')
             co +=1
     return co
+
+def belec(fc):
+    co = 0
+    eseed = int(secrets.token_hex(16),16)#random.randint(2**127,2**128)
+    emnemo = electrum.mnemonic_from_entropy(entropy=eseed)
+    rmxprv = electrum.mxprv_from_mnemonic(emnemo, '')
+    bb32 = BIP32.from_xpriv(rmxprv)
+    for i in range(2):
+        for ii in range(10):
+            pub = bb32.get_pubkey_from_path(f"m/{i}/{ii}")
+            addr = bitcoin.pubkey_to_address(pub)
+            res = addr_base58_to_pubkeyhash(addr, as_hex=True)
+            if (res in inf.bf_btc):
+                fc.increment(1)
+                logger_found.info(f'[F][Mode Electrum]{emnemo} | {eseed} | {res}')
+                if inf.balance:
+                    tx1, b1 = get_balance(res)
+                    if (tx1 > 0):
+                        print(f'\n[F][Mode Electrum] Found transaction! | {res}:{tx1}')
+                        logger_found.info(f'\n[F][Mode Electrum] Found transaction! | {res}:{tx1}')
+                    print(f'\n[F][Mode Electrum] Found address | {res}:{tx1}')
+                    logger_found.info(f'\n[F][Mode Electrum] Found address | {res}:{tx1}')
+                    if (b1 > 0):
+                        print(f'\n[F][Mode Electrum] Found address in balance | mnem:{emnemo} | {eseed} | {res}:{b1}')
+                        logger_found.info(f'[F][Mode Electrum]{emnemo} | {eseed} | {res}:{b1}')
+                        if inf.telegram:
+                            send_telegram(f'[F][Mode Elec] | {res}')
+                        if inf.mail:
+                            send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res}')
+                    else:
+                        print(f'\n[F][Mode Electrum] Found address | {emnemo} | {eseed} | {res}')
+                        logger_found.info(f'[F][Mode Electrum]{emnemo} | {eseed} | {res}')
+                        if inf.telegram:
+                            send_telegram(f'[F][Mode Elec] | {res}')
+                        if inf.mail:
+                            send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res}')
+                        print('[F][Mode Electrum] Found address balance 0.0')
+                else:
+                    print(f'\n[F][Mode Electrum] Found address | {emnemo} | {eseed} | {res}')
+                    logger_found.info(f'[F][Mode Electrum]{emnemo} | {eseed} | {res}')
+                    if inf.telegram:
+                        send_telegram(f'[F][Mode Elec] | {res}')
+                    if inf.mail:
+                        send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res}')
+            co +=1
+    return co
+
 
 def nnmnem(mem):
     if inf.mode == 'e':

@@ -89,9 +89,9 @@ def run(*args):
             for mem in mnemonic_lang:
                 mnem_counter.increment(1)
                 if inf.elec:
-                    eseed = gen_seed('')
+                    eseed = gen_seed()
                     emnemo = ' '.join(map(str, mn_encode(eseed)))
-                    mnem_counter.increment(1)
+                    mnem_counter.increment(2)
                 mnemonic, seed_bytes = nnmnem(mem)
                 #rnd
                 if inf.rnd and inf.bip == 'combo':
@@ -106,7 +106,8 @@ def run(*args):
                     brain_counter.increment(bw(mnemonic, found_counter))
                 #electrum
                 if inf.elec and inf.bip !='ETH':
-                    elec_counter.increment(belec(emnemo, eseed, found_counter))
+                    elec_counter.increment(belecold(emnemo, eseed, found_counter))
+                    elec_counter.increment(belec(found_counter))
                 #function bip
                 if inf.bip == "32" : total_counter.increment(b32(mnemonic,seed_bytes, found_counter))
                 if inf.bip == "44" : total_counter.increment(b44(mnemonic,seed_bytes, found_counter))
