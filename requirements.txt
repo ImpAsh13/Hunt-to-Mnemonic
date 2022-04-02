@@ -6,3 +6,4 @@ bip32
 requests
 bitcoin
 pbkdf2
+cryptos
