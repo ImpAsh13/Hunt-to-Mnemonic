@@ -6,6 +6,11 @@
 
 from consts import *
 
+def hash_160(public_key):
+    md = hashlib.new('ripemd160')
+    md.update(hashlib.sha256(public_key).digest())
+    return md.hexdigest()
+
 def mnemonic_to_seed32(mnemonic, passphrase=''):
     PBKDF2_ROUNDS = 2048
     mnemonic = mnemonic
@@ -13,12 +18,10 @@ def mnemonic_to_seed32(mnemonic, passphrase=''):
     return pbkdf2.PBKDF2(mnemonic, 'electrum' + passphrase, iterations = PBKDF2_ROUNDS, macmodule = hmac, digestmodule = hashlib.sha512).read(16)
 
 def gen_seed():
-    tmp = []
-    # print(int.from_bytes(os.urandom(16), "big"))
-    # print(hex(int.from_bytes(os.urandom(16), "big")))
-    # print(hex(int.from_bytes(os.urandom(16), "big"))[2:])
-    # print(secrets.token_hex(16))
-    return secrets.token_hex(16)
+    word = random.sample(inf.elec_list,12)
+    seed = mn_decode(word)
+    wd = ' '.join(map(str, word))
+    return wd, seed #secrets.token_hex(16)
 
 def mn_encode(message):
     n = 1626
@@ -359,7 +362,7 @@ def brnd(bip, fc):
 
 def b32(mnem, seed, fc):
     co = 0
-    group_size = 10
+    group_size = 5
     bip32 = BIP32.from_seed(seed)
     for path in inf.l32:
         for num1 in range(1):
@@ -437,7 +440,7 @@ def b32(mnem, seed, fc):
 
 def bETH(mnem, seed, fc):
     co = 0
-    group_size = 10
+    group_size = 5
     w = BIP32.from_seed(seed)
     for bi in range(2):
         for p in inf.leth:
@@ -495,7 +498,7 @@ def bETH(mnem, seed, fc):
 
 def b44(mnem, seed, fc):
     co = 0
-    group_size = 10
+    group_size = 5
     w = BIP32.from_seed(seed)
     for p in inf.l44:
         for nom2 in range(1):#accaunt
@@ -531,7 +534,7 @@ def b44(mnem, seed, fc):
 
 def bBTC(mnem, seed, fc):
     co = 0
-    group_size = 10
+    group_size = 5
     w = BIP32.from_seed(seed)
     for bip_ in inf.lbtc:
         for nom2 in range(1):
@@ -612,9 +615,13 @@ def belecold(emnemo, eseed, fc):
     mpub = bitcoin.electrum_mpk(seed)
     for i in range(2):
         for ii in range(10):
-            pub = bitcoin.from_string_to_bytes(bitcoin.electrum_pubkey(mpub, ii, i))
-            addr = bitcoin.pubkey_to_address(pub)
-            res = addr_base58_to_pubkeyhash(addr, as_hex=True)
+            try:
+                pub = bitcoin.from_string_to_bytes(bitcoin.electrum_pubkey(mpub, ii, i))
+            except:
+                pub = b'043b116f00042b52e0cc4d58d536f2b5d9a8121c94d9ab39ddbbe3211f39ca3fe0f926ee0992967702081c567316113df9534910552286ca9dbd1b2b0d5a8c33c2'
+            #addr = bitcoin.pubkey_to_address(pub)
+            res = hash_160(pub)
+            #print(res)
             if (res in inf.bf_btc):
                 fc.increment(1)
                 logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res}')
@@ -659,8 +666,8 @@ def belec(fc):
     for i in range(2):
         for ii in range(10):
             pub = bb32.get_pubkey_from_path(f"m/{i}/{ii}")
-            addr = bitcoin.pubkey_to_address(pub)
-            res = addr_base58_to_pubkeyhash(addr, as_hex=True)
+            #addr = bitcoin.pubkey_to_address(pub)
+            res = hash_160(pub)#addr_base58_to_pubkeyhash(addr, as_hex=True)
             if (res in inf.bf_btc):
                 fc.increment(1)
                 logger_found.info(f'[F][Mode Electrum]{emnemo} | {eseed} | {res}')
