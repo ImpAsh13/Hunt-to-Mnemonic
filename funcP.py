@@ -6,11 +6,6 @@
 
 from consts import *
 
-def hash_160(public_key):
-    md = hashlib.new('ripemd160')
-    md.update(hashlib.sha256(public_key).digest())
-    return md.hexdigest()
-
 def mnemonic_to_seed32(mnemonic, passphrase=''):
     PBKDF2_ROUNDS = 2048
     mnemonic = mnemonic
@@ -20,6 +15,9 @@ def mnemonic_to_seed32(mnemonic, passphrase=''):
 def gen_seed():
     word = random.sample(inf.elec_list,12)
     seed = mn_decode(word)
+    if len(seed) < 32: seed = seed.zfill(32)
+    if len(seed) > 32:
+        seed = seed[:32]
     wd = ' '.join(map(str, word))
     return wd, seed #secrets.token_hex(16)
 
@@ -550,7 +548,7 @@ def bBTC(mnem, seed, fc):
                     for tmp in range(group_size):
                         bip44_h160_cs = secp256k1_lib.pubkey_to_h160(1, True, Pv[tmp*65:tmp*65+65])
                         bip44_h160_c = secp256k1_lib.pubkey_to_h160(0, True, Pv[tmp*65:tmp*65+65])
-                        bip44_h160_uc = secp256k1_lib.pubkey_to_h160(0, False, Pv[tmp*65:tmp*65+65])                        
+                        bip44_h160_uc = secp256k1_lib.pubkey_to_h160(0, False, Pv[tmp*65:tmp*65+65])
                         if inf.debug > 0:
                         #----------------------------------------------------------------    
                             addr_c = secp256k1_lib.hash_to_address(0, False, bip44_h160_c)
@@ -612,94 +610,91 @@ def belecold(emnemo, eseed, fc):
     co = 0
     seed = eseed
     mnemo = emnemo
-    mpub = bitcoin.electrum_mpk(seed)
+    try:
+        mpub = bitcoin.electrum_mpk(seed)
+    except:
+        return co
     for i in range(2):
         for ii in range(10):
-            try:
-                pub = bitcoin.from_string_to_bytes(bitcoin.electrum_pubkey(mpub, ii, i))
-            except:
-                pub = b'043b116f00042b52e0cc4d58d536f2b5d9a8121c94d9ab39ddbbe3211f39ca3fe0f926ee0992967702081c567316113df9534910552286ca9dbd1b2b0d5a8c33c2'
-            #addr = bitcoin.pubkey_to_address(pub)
-            res = hash_160(pub)
-            #print(res)
-            if (res in inf.bf_btc):
+            pub = bitcoin.electrum_pubkey(mpub, ii, i)#bitcoin.from_string_to_bytes()
+            res = bitcoin.bin_hash160(binascii.unhexlify(pub))
+            if (res.hex() in inf.bf_btc):
                 fc.increment(1)
-                logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res}')
+                logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res.hex()}')
                 if inf.balance:
-                    tx1, b1 = get_balance(res)
+                    tx1, b1 = get_balance(res.hex())
                     if (tx1 > 0):
-                        print(f'\n[F][Mode Electrum] Found transaction! | {res}:{tx1}')
-                        logger_found.info(f'\n[F][Mode Electrum] Found transaction! | {res}:{tx1}')
-                    print(f'\n[F][Mode Electrum] Found address | {res}:{tx1}')
-                    logger_found.info(f'\n[F][Mode Electrum] Found address | {res}:{tx1}')
+                        print(f'\n[F][Mode Electrum] Found transaction! | {res.hex()}:{tx1}')
+                        logger_found.info(f'\n[F][Mode Electrum] Found transaction! | {res.hex()}:{tx1}')
+                    print(f'\n[F][Mode Electrum] Found address | {res.hex()}:{tx1}')
+                    logger_found.info(f'\n[F][Mode Electrum] Found address | {res.hex()}:{tx1}')
                     if (b1 > 0):
-                        print(f'\n[F][Mode Electrum] Found address in balance | mnem:{mnemo} | {seed} | {res}:{b1}')
-                        logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res}:{b1}')
+                        print(f'\n[F][Mode Electrum] Found address in balance | mnem:{mnemo} | {seed} | {res.hex()}:{b1}')
+                        logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res.hex()}:{b1}')
                         if inf.telegram:
-                            send_telegram(f'[F][Mode Elec] | {res}')
+                            send_telegram(f'[F][Mode Elec] | {res.hex()}')
                         if inf.mail:
-                            send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res}')
+                            send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res.hex()}')
                     else:
-                        print(f'\n[F][Mode Electrum] Found address | {mnemo} | {seed} | {res}')
-                        logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res}')
+                        print(f'\n[F][Mode Electrum] Found address | {mnemo} | {seed} | {res.hex()}')
+                        logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res.hex()}')
                         if inf.telegram:
-                            send_telegram(f'[F][Mode Elec] | {res}')
+                            send_telegram(f'[F][Mode Elec] | {res.hex()}')
                         if inf.mail:
-                            send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res}')
+                            send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res.hex()}')
                         print('[F][Mode Electrum] Found address balance 0.0')
                 else:
-                    print(f'\n[F][Mode Electrum] Found address | {mnemo} | {seed} | {res}')
-                    logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res}')
+                    print(f'\n[F][Mode Electrum] Found address | {mnemo} | {seed} | {res.hex()}')
+                    logger_found.info(f'[F][Mode Electrum]{mnemo} | {seed} | {res.hex()}')
                     if inf.telegram:
-                        send_telegram(f'[F][Mode Elec] | {res}')
+                        send_telegram(f'[F][Mode Elec] | {res.hex()}')
                     if inf.mail:
-                        send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res}')
+                        send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res.hex()}')
             co +=1
     return co
 
 def belec(fc):
     co = 0
-    eseed = int(secrets.token_hex(16),16)#random.randint(2**127,2**128)
+    eseed = int(secrets.token_hex(16),16)
     emnemo = electrum.mnemonic_from_entropy(entropy=eseed)
     rmxprv = electrum.mxprv_from_mnemonic(emnemo, '')
     bb32 = BIP32.from_xpriv(rmxprv)
     for i in range(2):
         for ii in range(10):
             pub = bb32.get_pubkey_from_path(f"m/{i}/{ii}")
-            #addr = bitcoin.pubkey_to_address(pub)
-            res = hash_160(pub)#addr_base58_to_pubkeyhash(addr, as_hex=True)
-            if (res in inf.bf_btc):
+            res = bitcoin.bin_hash160(pub)
+            if (res.hex() in inf.bf_btc):
                 fc.increment(1)
-                logger_found.info(f'[F][Mode Electrum]{emnemo} | {eseed} | {res}')
+                logger_found.info(f'[F][Mode Electrum]{emnemo} | {eseed} | {res.hex()}')
                 if inf.balance:
-                    tx1, b1 = get_balance(res)
+                    tx1, b1 = get_balance(res.hex())
                     if (tx1 > 0):
-                        print(f'\n[F][Mode Electrum] Found transaction! | {res}:{tx1}')
-                        logger_found.info(f'\n[F][Mode Electrum] Found transaction! | {res}:{tx1}')
-                    print(f'\n[F][Mode Electrum] Found address | {res}:{tx1}')
-                    logger_found.info(f'\n[F][Mode Electrum] Found address | {res}:{tx1}')
+                        print(f'\n[F][Mode Electrum] Found transaction! | {res.hex()}:{tx1}')
+                        logger_found.info(f'\n[F][Mode Electrum] Found transaction! | {res.hex()}:{tx1}')
+                    print(f'\n[F][Mode Electrum] Found address | {res.hex()}:{tx1}')
+                    logger_found.info(f'\n[F][Mode Electrum] Found address | {res.hex()}:{tx1}')
                     if (b1 > 0):
-                        print(f'\n[F][Mode Electrum] Found address in balance | mnem:{emnemo} | {eseed} | {res}:{b1}')
-                        logger_found.info(f'[F][Mode Electrum]{emnemo} | {eseed} | {res}:{b1}')
+                        print(f'\n[F][Mode Electrum] Found address in balance | mnem:{emnemo} | {eseed} | {res.hex()}:{b1}')
+                        logger_found.info(f'[F][Mode Electrum]{emnemo} | {eseed} | {res.hex()}:{b1}')
                         if inf.telegram:
-                            send_telegram(f'[F][Mode Elec] | {res}')
+                            send_telegram(f'[F][Mode Elec] | {res.hex()}')
                         if inf.mail:
-                            send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res}')
+                            send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res.hex()}')
                     else:
-                        print(f'\n[F][Mode Electrum] Found address | {emnemo} | {eseed} | {res}')
-                        logger_found.info(f'[F][Mode Electrum]{emnemo} | {eseed} | {res}')
+                        print(f'\n[F][Mode Electrum] Found address | {emnemo} | {eseed} | {res.hex()}')
+                        logger_found.info(f'[F][Mode Electrum]{emnemo} | {eseed} | {res.hex()}')
                         if inf.telegram:
-                            send_telegram(f'[F][Mode Elec] | {res}')
+                            send_telegram(f'[F][Mode Elec] | {res.hex()}')
                         if inf.mail:
-                            send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res}')
+                            send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res.hex()}')
                         print('[F][Mode Electrum] Found address balance 0.0')
                 else:
-                    print(f'\n[F][Mode Electrum] Found address | {emnemo} | {eseed} | {res}')
-                    logger_found.info(f'[F][Mode Electrum]{emnemo} | {eseed} | {res}')
+                    print(f'\n[F][Mode Electrum] Found address | {emnemo} | {eseed} | {res.hex()}')
+                    logger_found.info(f'[F][Mode Electrum]{emnemo} | {eseed} | {res.hex()}')
                     if inf.telegram:
-                        send_telegram(f'[F][Mode Elec] | {res}')
+                        send_telegram(f'[F][Mode Elec] | {res.hex()}')
                     if inf.mail:
-                        send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res}')
+                        send_email(f'[F][Mode Elec] {emnemo} | {eseed} | {res.hex()}')
             co +=1
     return co
 

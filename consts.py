@@ -17,7 +17,7 @@ import argparse, unicodedata, ctypes, hmac, datetime
 import multiprocessing
 import os, sys, platform
 import random, secrets
-import smtplib, socket, string, sys, ecdsa, hashlib, pbkdf2
+import smtplib, socket, string, sys, ecdsa, hashlib, pbkdf2, binascii
 from random import randint, shuffle
 from secrets import choice
 import bitcoin
@@ -94,13 +94,14 @@ class inf:
             l = [line.strip() for line in f]
             f.close()
         except:
-            logger_err.error('Error load wl/electrum.txt')
-            print(f'[E] Error load wl/electrum.txt')
+            logger_err.error('Error load file words')
+            print(f'[E] Error load file words')
             pp = multiprocessing.current_process()
             pp.close()
             exit()
         else:
             return l
+        
     def load_game():
         try:
             f = open('wl/game.txt','r')
@@ -127,7 +128,7 @@ class inf:
             exit()
         else:
             return l
-    version:str = '* Pulsar v5.5.7 multiT Hash160 *'
+    version:str = '* Pulsar v5.5.8 multiT Hash160 *'
     mnemonic_BTC:list = ['english'] # ['english', 'chinese_simplified', 'chinese_traditional', 'french', 'italian', 'spanish', 'korean','japanese','portuguese','czech']
     mnemonic_ETH:list = ['english'] # ['english', 'chinese_simplified', 'chinese_traditional', 'french', 'italian', 'spanish', 'korean','japanese','portuguese','czech']
     #general
