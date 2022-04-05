@@ -3,7 +3,9 @@ bitarray==1.9.2
 mnemonic
 colorama
 bip32
+bitcoinlib
 requests
 bitcoin
 pbkdf2
 cryptos
+btclib
